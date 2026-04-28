@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme */
+    --color-primary: 79 70 229;            /* Indigo 600 */
+    --color-primary-foreground: 255 255 255;
+    
+    --color-secondary: 236 72 153;          /* Pink 500 */
+    --color-secondary-foreground: 255 255 255;
+    
+    --color-surface: 255 255 255;           /* White */
+    --color-content: 15 23 42;               /* Slate 900 */
+  }
+
+  .dark-mode {
+    /* Dark Theme */
+    --color-primary: 129 140 248;           /* Indigo 400 */
+    --color-primary-foreground: 15 23 42;
+    
+    --color-secondary: 244 114 182;         /* Pink 400 */
+    --color-secondary-foreground: 15 23 42;
+    
+    --color-surface: 15 23 42;              /* Slate 900 */
+    --color-content: 248 250 252;           /* Slate 50 */
+  }
+
+  body {
+    background: var(--bg-surface-val);
+    background-attachment: fixed;
+    @apply text-content transition-colors duration-300;
+  }
+}
+
+/* Liquid Glass Effect */
+.liquid-glass {
+  background: rgba(0, 0, 0, 0.4);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%,
+    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
+    rgba(255,255,255,0.1) 80%, rgba(255,255,255,0.3) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
