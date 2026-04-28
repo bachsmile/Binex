@@ -1,0 +1,120 @@
+import {
+  Entity,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  PrimaryColumn,
+  BeforeInsert,
+  OneToMany,
+} from 'typeorm';
+import { ulid } from 'ulid';
+import { Wedding } from '../../wedding/entities/wedding.entity';
+import { WdWeb } from '../../wedding/entities/wd-web.entity';
+import { WdCard } from '../../wedding/entities/wd-card.entity';
+import { Role } from 'src/decorators/roles.decorator';
+import { UserPermission } from './user-permission.entity';
+
+@Entity('user')
+export class User {
+  @PrimaryColumn({ length: 255 })
+  id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = ulid();
+    }
+  }
+
+  @Column({ unique: true })
+  userName: string;
+
+  @Column()
+  password: string;
+
+  @Column({ nullable: true })
+  code: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true })
+  fullName: string;
+
+  @Column({ nullable: true })
+  email: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  state: string;
+
+  @Column({ nullable: true })
+  zip: string;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
+  })
+  role: Role;
+
+  @Column({ nullable: true })
+  status: string;
+
+  @Column({ nullable: true })
+  isDeleted: boolean;
+
+  @Column({ nullable: true })
+  deletedAt: Date;
+
+  @Column({ nullable: true })
+  deletedBy: string;
+
+  @Column({ nullable: true })
+  createdBy: string;
+
+  @Column({ nullable: true })
+  updatedBy: string;
+
+  //Các quản lý của user
+  @Column('text', { array: true, nullable: true })
+  managerIds: string[];
+
+  //Các ví đăng kí cá nhân
+
+  @Column('text', { array: true, nullable: true })
+  walletIds: string[];
+
+  // Gói quà đã nhận
+  @Column('text', { array: true, nullable: true })
+  packageIds: string[];
+
+  @OneToMany(() => Wedding, (wedding) => wedding.user)
+  weddings: Wedding[];
+
+  @OneToMany(() => WdWeb, (wdWeb) => wdWeb.user)
+  wdWebs: WdWeb[];
+
+  @OneToMany(() => WdCard, (wdCard) => wdCard.user)
+  wdCards: WdCard[];
+
+  @OneToMany(() => UserPermission, (userPermission) => userPermission.user)
+  userPermissions: UserPermission[];
+}
