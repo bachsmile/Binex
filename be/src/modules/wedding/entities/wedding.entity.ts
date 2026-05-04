@@ -80,7 +80,7 @@ export class Wedding {
   inviteAddress: string;
 
   // 👥 Management
-  @Column()
+  @Column({ nullable: true })
   userId: string;
 
   @Column({ default: 'draft' })
@@ -100,9 +100,6 @@ export class Wedding {
 
   @Column({ type: 'text', nullable: true })
   note: string;
-
-  @Column('text', { array: true, nullable: true })
-  packageIds: string[];
 
   @Column('text', { array: true, nullable: true })
   images: string[];

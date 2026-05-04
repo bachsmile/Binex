@@ -7,16 +7,17 @@ import { User } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 
 import { UserPermission } from './entities/user-permission.entity';
-import { Serivce } from '../serivce/entities/serivce.entity';
-import { Package } from '../package/entities/package.entity';
+import { Service } from '../service/entities/service.entity';
+import { Package } from '../service/entities/package.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserPermission, Serivce, Package]),
+    TypeOrmModule.forFeature([User, UserPermission, Service, Package]),
     AuthModule,
   ],
 
   controllers: [UserController],
   providers: [UserService],
+  exports: [UserService],
 })
 export class UserModule {}

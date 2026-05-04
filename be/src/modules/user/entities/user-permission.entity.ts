@@ -40,6 +40,9 @@ export class UserPermission {
   @Column()
   userId: string;
 
+  @Column({ type: 'timestamp', nullable: true })
+  expiredAt: Date;
+
   @ManyToOne(() => User, (user) => user.userPermissions)
   user: User;
 

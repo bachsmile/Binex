@@ -6,6 +6,11 @@ import { Wallet } from './entities/wallet.entity';
 import { Repository } from 'typeorm';
 import { WORD_LIST } from './constants/wordlist';
 import * as crypto from 'crypto';
+import {
+  Transaction,
+  TransactionType,
+  TransactionStatus,
+} from './entities/transaction.entity';
 
 @Injectable()
 export class WalletService {
@@ -185,23 +190,70 @@ export class WalletService {
       await manager.save(fromWallet);
       await manager.save(toWallet);
 
+      // 5. Lưu lịch sử giao dịch (Transaction History)
+      const transaction = manager.create(Transaction, {
+        fromAddress: fromWallet.address,
+        toAddress: toWallet.address,
+        amount,
+        currency,
+        type: TransactionType.TRANSFER,
+        status: TransactionStatus.SUCCESS,
+        userId: fromUserId,
+        description: `Chuyển ${amount} ${currency} tới ${toAddress}`,
+      });
+      await manager.save(transaction);
+
+      // Ghi thêm một bản ghi cho người nhận
+      const receiverTransaction = manager.create(Transaction, {
+        fromAddress: fromWallet.address,
+        toAddress: toWallet.address,
+        amount,
+        currency,
+        type: TransactionType.TRANSFER,
+        status: TransactionStatus.SUCCESS,
+        userId: toWallet.userId,
+        description: `Nhận ${amount} ${currency} từ ${fromWallet.address}`,
+      });
+      await manager.save(receiverTransaction);
+
       return {
         success: true,
         message: `Đã chuyển ${amount} ${currency} thành công`,
+        transactionId: transaction.id,
       };
     });
   }
 
   async deposit(address: string, amount: number, currency: string) {
-    const wallet = await this.walletRepository.findOne({ where: { address } });
-    if (!wallet) {
-      throw new BadRequestException('Không tìm thấy ví với địa chỉ này');
-    }
+    return await this.walletRepository.manager.transaction(async (manager) => {
+      const wallet = await manager.findOne(Wallet, { where: { address } });
+      if (!wallet) {
+        throw new BadRequestException('Không tìm thấy ví với địa chỉ này');
+      }
 
-    const newBalance = { ...wallet.balance };
-    newBalance[currency] = (newBalance[currency] || 0) + amount;
+      const newBalance = { ...wallet.balance };
+      newBalance[currency] = (newBalance[currency] || 0) + amount;
 
-    wallet.balance = newBalance;
-    return this.walletRepository.save(wallet);
+      wallet.balance = newBalance;
+      await manager.save(wallet);
+
+      // Lưu lịch sử nạp tiền
+      const transaction = manager.create(Transaction, {
+        toAddress: address,
+        amount,
+        currency,
+        type: TransactionType.DEPOSIT,
+        status: TransactionStatus.SUCCESS,
+        userId: wallet.userId,
+        description: `Nạp ${amount} ${currency} vào ví`,
+      });
+      await manager.save(transaction);
+
+      return {
+        success: true,
+        data: wallet,
+        transactionId: transaction.id,
+      };
+    });
   }
 }

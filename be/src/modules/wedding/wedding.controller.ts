@@ -8,8 +8,8 @@ import {
   Delete,
 } from '@nestjs/common';
 import { WeddingService } from './wedding.service';
-import { CreateWeddingDto } from './dto/create-wedding.dto';
-import { UpdateWeddingDto } from './dto/update-wedding.dto';
+import { CreateWeddingDto } from './dto/wedding/create-wedding.dto';
+import { UpdateWeddingDto } from './dto/wedding/update-wedding.dto';
 
 import { ApiTags } from '@nestjs/swagger';
 
@@ -30,16 +30,16 @@ export class WeddingController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.weddingService.findOne(+id);
+    return this.weddingService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateWeddingDto: UpdateWeddingDto) {
-    return this.weddingService.update(+id, updateWeddingDto);
+    return this.weddingService.update(id, updateWeddingDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.weddingService.remove(+id);
+    return this.weddingService.remove(id);
   }
 }

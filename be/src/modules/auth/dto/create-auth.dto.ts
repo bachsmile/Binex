@@ -16,4 +16,14 @@ export class CreateAuthDto {
   @IsString()
   @IsOptional()
   code: string;
+
+  @ApiProperty({ example: 'service123' })
+  @IsString()
+  @IsOptional()
+  serviceId: string;
+
+  @ApiProperty({ example: 'INV123456' })
+  @IsString()
+  @IsOptional()
+  invoiceCode: string;
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateWeddingDto } from './dto/create-wedding.dto';
-import { UpdateWeddingDto } from './dto/update-wedding.dto';
+import { CreateWeddingDto } from './dto/wedding/create-wedding.dto';
+import { UpdateWeddingDto } from './dto/wedding/update-wedding.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wedding } from './entities/wedding.entity';
 import { Repository } from 'typeorm';
@@ -13,22 +13,25 @@ export class WeddingService {
   ) {}
 
   create(createWeddingDto: CreateWeddingDto) {
-    return this.weddingRepository.save(createWeddingDto);
+    const wedding = this.weddingRepository.create(createWeddingDto);
+    return this.weddingRepository.save(wedding);
   }
 
   findAll() {
-    return `This action returns all wedding`;
+    return this.weddingRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} wedding`;
+  async findOne(id: string) {
+    return this.weddingRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateWeddingDto: UpdateWeddingDto) {
-    return `This action updates a #${id} wedding`;
+  async update(id: string, updateWeddingDto: UpdateWeddingDto) {
+    await this.weddingRepository.update(id, updateWeddingDto);
+    return this.findOne(id);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} wedding`;
+  async remove(id: string) {
+    await this.weddingRepository.delete(id);
+    return { deleted: true };
   }
 }

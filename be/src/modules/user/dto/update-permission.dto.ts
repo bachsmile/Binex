@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, IsNumber, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsNumber,
+  ValidateNested,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PermissionItem {
@@ -17,6 +24,11 @@ export class PermissionItem {
   })
   @IsNumber()
   ac: number;
+
+  @ApiProperty({ example: '2026-12-31T23:59:59Z', required: false })
+  @IsDateString()
+  @IsOptional()
+  expiredAt?: string;
 }
 
 export class UpdatePermissionDto {

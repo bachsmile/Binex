@@ -12,6 +12,8 @@ import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LoginDto } from './dto/login.dto';
+import { GenerateKeyDto } from './dto/generate-key.dto';
+import { ActivateDto } from './dto/activate.dto';
 
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -31,7 +33,37 @@ export class AuthController {
     return this.authService.create(createAuthDto);
   }
 
-  @Get()
+  @Post('register-ad')
+  @ApiOperation({ summary: 'Đăng ký tài khoản admin mới' })
+  registerAd(@Body() createAuthDto: CreateAuthDto) {
+    return this.authService.createAd(createAuthDto);
+  }
+
+  @Post('generate-key')
+  @ApiOperation({ summary: 'Tạo mã kích hoạt mới (Admin dùng)' })
+  generateKey(@Body() generateKeyDto: GenerateKeyDto) {
+    return this.authService.generateActivationKey(
+      generateKeyDto.packageId,
+      generateKeyDto.serviceId,
+      generateKeyDto.role,
+      generateKeyDto.days,
+    );
+  }
+
+  @Post('activate')
+  @ApiOperation({ summary: 'Kích hoạt/Gia hạn tài khoản bằng mã' })
+  activate(@Body() activateDto: ActivateDto) {
+    return this.authService.redeemActivationKey(
+      activateDto.userId,
+      activateDto.key,
+    );
+  }
+
+  @Get('key-info/:key')
+  @ApiOperation({ summary: 'Xem thông tin của mã kích hoạt' })
+  getKeyInfo(@Param('key') key: string) {
+    return this.authService.getKeyInfo(key);
+  }
   findAll() {
     return this.authService.findAll();
   }

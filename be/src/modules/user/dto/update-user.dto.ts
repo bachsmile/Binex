@@ -2,6 +2,8 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
 import { IsOptional, IsString } from 'class-validator';
 import { Role } from 'src/decorators/roles.decorator';
+import { UserStatus } from '../entities/user.entity';
+import { IsBoolean, IsDate, IsEnum } from 'class-validator';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
@@ -47,19 +49,19 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   country: string;
 
-  @IsString()
+  @IsEnum(Role)
   @IsOptional()
   role: Role;
 
-  @IsString()
+  @IsEnum(UserStatus)
   @IsOptional()
-  status: string;
+  status: UserStatus;
 
-  @IsString()
+  @IsBoolean()
   @IsOptional()
   isDeleted: boolean;
 
-  @IsString()
+  @IsDate()
   @IsOptional()
   deletedAt: Date;
 

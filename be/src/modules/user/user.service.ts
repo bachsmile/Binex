@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,9 +7,10 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UserPermission } from './entities/user-permission.entity';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { Serivce } from '../serivce/entities/serivce.entity';
-import { Package } from '../package/entities/package.entity';
+import { Service } from '../service/entities/service.entity';
+import { Package } from '../service/entities/package.entity';
 import { Role } from 'src/decorators/roles.decorator';
+import { UserStatus } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -18,8 +19,8 @@ export class UserService {
     private userRepository: Repository<User>,
     @InjectRepository(UserPermission)
     private permissionRepository: Repository<UserPermission>,
-    @InjectRepository(Serivce)
-    private serivceRepository: Repository<Serivce>,
+    @InjectRepository(Service)
+    private serviceRepository: Repository<Service>,
     @InjectRepository(Package)
     private packageRepository: Repository<Package>,
   ) {}
@@ -38,11 +39,107 @@ export class UserService {
         serName: p.serName,
         packName: p.packName,
         ac: p.ac,
+        expiredAt: p.expiredAt ? new Date(p.expiredAt) : undefined,
       });
     });
 
     // 3. Save to database
     return await this.permissionRepository.save(permissions);
+  }
+
+  async extendPermission(permissionId: string, days: number) {
+    const permission = await this.permissionRepository.findOne({
+      where: { id: permissionId },
+    });
+
+    if (!permission) {
+      throw new Error('Permission record not found');
+    }
+
+    const currentExpiry = permission.expiredAt
+      ? new Date(permission.expiredAt)
+      : new Date();
+
+    // Add days to current expiry
+    currentExpiry.setDate(currentExpiry.getDate() + days);
+
+    permission.expiredAt = currentExpiry;
+    permission.updatedAt = new Date();
+
+    return await this.permissionRepository.save(permission);
+  }
+
+  async changePackage(permissionId: string, newPackageId: string) {
+    const permission = await this.permissionRepository.findOne({
+      where: { id: permissionId },
+    });
+    if (!permission) {
+      throw new BadRequestException('Không tìm thấy bản ghi quyền hạn');
+    }
+
+    const newPackage = await this.packageRepository.findOne({
+      where: { id: newPackageId },
+    });
+    if (!newPackage) {
+      throw new BadRequestException('Gói mới không tồn tại');
+    }
+
+    // Kiểm tra: Chỉ được đổi sang gói không phải là Group
+    if (newPackage.isGroup) {
+      throw new BadRequestException('Không thể đổi sang gói dành cho nhóm');
+    }
+
+    const oldPackage = await this.packageRepository.findOne({
+      where: { id: permission.packId },
+    });
+
+    // Kiểm tra: Gói mới phải trùng serviceId với bản ghi hiện tại
+    if (permission.serId && newPackage.serviceId !== permission.serId) {
+      throw new BadRequestException(
+        'Gói mới phải thuộc cùng một dịch vụ (Service)',
+      );
+    }
+
+    const now = new Date();
+    let newExpiredAt = new Date();
+
+    if (permission.expiredAt && permission.expiredAt > now && oldPackage) {
+      // 1. Tính giá trị còn lại của gói cũ (Value = RemainingDays * PricePerDay)
+      const remainingMs = permission.expiredAt.getTime() - now.getTime();
+      const remainingDays = remainingMs / (1000 * 60 * 60 * 24);
+
+      const oldPrice = parseFloat(oldPackage.price) || 0;
+      const oldDuration = oldPackage.expire || 30;
+      const oldPricePerDay = oldPrice / oldDuration;
+
+      const remainingValue = remainingDays * oldPricePerDay;
+
+      // 2. Quy đổi giá trị đó sang thời gian của gói mới (NewDays = Value / NewPricePerDay)
+      const newPrice = parseFloat(newPackage.price) || 0;
+      const newDuration = newPackage.expire || 30;
+      const newPricePerDay = newPrice / newDuration;
+
+      if (newPricePerDay > 0) {
+        const addedDays = remainingValue / newPricePerDay;
+        newExpiredAt.setTime(now.getTime() + addedDays * (1000 * 60 * 60 * 24));
+      } else {
+        // Nếu gói mới miễn phí hoặc lỗi giá, giữ nguyên thời hạn cũ?
+        // Thường thì gói mới sẽ có thời hạn riêng, nhưng theo yêu cầu là quy đổi.
+        newExpiredAt = permission.expiredAt;
+      }
+    } else {
+      // Nếu không có thời gian còn lại, mặc định là hết hạn ngay (chờ nạp gói mới)
+      newExpiredAt = now;
+    }
+
+    // 3. Cập nhật thông tin quyền hạn theo gói mới
+    permission.packId = newPackage.id;
+    permission.packName = newPackage.name;
+    permission.ac = newPackage.ser; // Cập nhật Action bits từ gói mới
+    permission.expiredAt = newExpiredAt;
+    permission.updatedAt = now;
+
+    return await this.permissionRepository.save(permission);
   }
 
   async getUserPermissions(userId: string) {
@@ -79,12 +176,28 @@ export class UserService {
     return savedUser;
   }
 
-  async findAll() {
-    return await this.userRepository.find({ relations: ['userPermissions'] });
+  async findAll(status?: UserStatus, role?: Role) {
+    const where: any = {};
+    if (status) where.status = status;
+    if (role) where.role = role;
+    return await this.userRepository.find({
+      where,
+      relations: ['userPermissions'],
+    });
   }
 
-  async findPage(pageNumber: number = 1, pageSize: number = 10) {
+  async findPage(
+    pageNumber: number = 1,
+    pageSize: number = 10,
+    status?: UserStatus,
+    role?: Role,
+  ) {
+    const where: any = {};
+    if (status) where.status = status;
+    if (role) where.role = role;
+
     const [data, total] = await this.userRepository.findAndCount({
+      where,
       skip: (pageNumber - 1) * pageSize,
       take: pageSize,
       relations: ['userPermissions'],

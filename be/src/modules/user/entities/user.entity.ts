@@ -14,6 +14,12 @@ import { WdCard } from '../../wedding/entities/wd-card.entity';
 import { Role } from 'src/decorators/roles.decorator';
 import { UserPermission } from './user-permission.entity';
 
+export enum UserStatus {
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+}
+
 @Entity('user')
 export class User {
   @PrimaryColumn({ length: 255 })
@@ -34,6 +40,12 @@ export class User {
 
   @Column({ nullable: true })
   code: string;
+
+  @Column('text', { array: true, nullable: true })
+  serviceIds: string[];
+
+  @Column({ nullable: true })
+  invoiceCode: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -75,8 +87,12 @@ export class User {
   })
   role: Role;
 
-  @Column({ nullable: true })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
 
   @Column({ nullable: true })
   isDeleted: boolean;

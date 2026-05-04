@@ -7,20 +7,29 @@ import { User } from './modules/user/entities/user.entity';
 import { Wedding } from './modules/wedding/entities/wedding.entity';
 import { WdWeb } from './modules/wedding/entities/wd-web.entity';
 import { WdCard } from './modules/wedding/entities/wd-card.entity';
-import { WeddingPackage } from './modules/wedding-package/entities/wedding-package.entity';
+import { WeddingPackage } from './modules/wedding/entities/wedding-package.entity';
+import { Wallet } from './modules/wallet/entities/wallet.entity';
+import { Transaction } from './modules/wallet/entities/transaction.entity';
 import { UserModule } from './modules/user/user.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { SerivceModule } from './modules/serivce/serivce.module';
+import { ServiceModule } from './modules/service/service.module';
 import { WeddingModule } from './modules/wedding/wedding.module';
-import { PackageModule } from './modules/package/package.module';
+
 import { PayModule } from './modules/pay/pay.module';
-import { MethodPayModule } from './modules/method-pay/method-pay.module';
-import { WeddingPackageModule } from './modules/wedding-package/wedding-package.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { MailModule } from './modules/mail/mail.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -30,7 +39,15 @@ import { WeddingPackageModule } from './modules/wedding-package/wedding-package.
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [User, Wedding, WdWeb, WdCard, WeddingPackage],
+        entities: [
+          User,
+          Wedding,
+          WdWeb,
+          WdCard,
+          WeddingPackage,
+          Wallet,
+          Transaction,
+        ],
         autoLoadEntities: true,
         synchronize: true,
       }),
@@ -39,12 +56,12 @@ import { WeddingPackageModule } from './modules/wedding-package/wedding-package.
     UserModule,
     WalletModule,
     AuthModule,
-    SerivceModule,
+    ServiceModule,
     WeddingModule,
-    PackageModule,
     PayModule,
-    MethodPayModule,
-    WeddingPackageModule,
+    FinanceModule,
+    UploadModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
