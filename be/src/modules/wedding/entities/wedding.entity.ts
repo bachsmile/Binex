@@ -9,11 +9,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { ulid } from 'ulid';
 import { User } from '../../user/entities/user.entity';
 import { WdWeb } from './wd-web.entity';
 import { WdCard } from './wd-card.entity';
+import { Guest } from './guest.entity';
 
 @Entity('wedding')
 export class Wedding {
@@ -129,6 +131,9 @@ export class Wedding {
   updatedBy: string;
 
   @Column({ default: false })
+  autoSend: boolean;
+
+  @Column({ default: false })
   isDeleted: boolean;
 
   @ManyToOne(() => User, (user) => user.weddings)
@@ -142,4 +147,7 @@ export class Wedding {
   @OneToOne(() => WdCard, (wdCard) => wdCard.wedding)
   @JoinColumn({ name: 'cardId' })
   wdCard: WdCard;
+
+  @OneToMany(() => Guest, (guest) => guest.wedding)
+  guests: Guest[];
 }

@@ -125,6 +125,11 @@ export class CreateWeddingDto {
   @IsOptional()
   createdBy?: string;
 
+  @ApiProperty({ example: false, required: false })
+  @IsBoolean()
+  @IsOptional()
+  autoSend?: boolean;
+
   @ApiProperty({ example: '2026-12-25T18:00:00Z', required: false })
   @IsString()
   @IsOptional()
