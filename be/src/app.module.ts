@@ -21,6 +21,8 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MailModule } from './modules/mail/mail.module';
 import { FileManagerModule } from './modules/file-manager/file-manager.module';
+import { EventModule } from './modules/event/event.module';
+import { PlatformFeeModule } from './modules/platform-fee/platform-fee.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -64,6 +66,8 @@ import { join } from 'path';
     UploadModule,
     MailModule,
     FileManagerModule,
+    EventModule,
+    PlatformFeeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

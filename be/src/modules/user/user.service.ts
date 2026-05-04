@@ -187,16 +187,32 @@ export class UserService {
       role = Role.SUPER_ADMIN;
     }
 
-    // 3. Create user instance
+    // 4. Tạo mã code ref 8 ký tự ngẫu nhiên
+    const refCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // 5. Create user instance
     const newUser = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
       role,
+      code: refCode,
     });
 
     // 4. Save to database
     const savedUser = await this.userRepository.save(newUser);
-
+    //kiểm tra ref code
+    const user = await this.userRepository.findOne({
+      where: { code: createUserDto.code },
+    });
+    if (user) {
+      if (!user.managerIds) {
+        user.managerIds = [];
+      }
+      if (!user.managerIds.includes(savedUser.id)) {
+        user.managerIds.push(savedUser.id);
+        await this.userRepository.save(user);
+      }
+    }
     return savedUser;
   }
 
