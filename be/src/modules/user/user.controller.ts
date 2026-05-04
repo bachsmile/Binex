@@ -15,6 +15,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { ExtendPermissionDto } from './dto/extend-permission.dto';
 import { ChangePackageDto } from './dto/change-package.dto';
+import { UpdateUserRecordLimitDto } from './dto/update-record-limit.dto';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -139,11 +140,11 @@ export class UserController {
 
   @Patch(':id/record-limit')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Cập nhật bản đồ giới hạn bản ghi (JSON) cho người dùng' })
+  @ApiOperation({ summary: 'Gán key và giá trị giới hạn bản ghi cho người dùng' })
   updateRecordLimit(
     @Param('id') id: string,
-    @Body('recordLimit') recordLimit: object,
+    @Body() data: UpdateUserRecordLimitDto,
   ) {
-    return this.userService.updateRecordLimit(id, recordLimit);
+    return this.userService.updateRecordLimit(id, data.key, data.value);
   }
 }

@@ -31,10 +31,10 @@ export class UploadService {
       usedStorageMB = Number(user?.usedStorage) || 0;
     }
 
-    const uploadPath = userId 
+    const uploadPath = userId
       ? path.join(process.cwd(), 'uploads', subfolder, userId)
       : path.join(process.cwd(), 'uploads', subfolder);
-      
+
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
@@ -44,8 +44,8 @@ export class UploadService {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const filename = `img-${uniqueSuffix}.webp`;
       const filePath = path.join(uploadPath, filename);
-      
-      const fileUrl = userId 
+
+      const fileUrl = userId
         ? `/uploads/${subfolder}/${userId}/${filename}`
         : `/uploads/${subfolder}/${filename}`;
 
@@ -55,13 +55,15 @@ export class UploadService {
         .webp({ quality: 80 })
         .toBuffer();
 
-      const fileSizeMB = Number((processedBuffer.length / (1024 * 1024)).toFixed(4));
+      const fileSizeMB = Number(
+        (processedBuffer.length / (1024 * 1024)).toFixed(4),
+      );
 
       // Kiểm tra xem file này có làm vượt giới hạn không
       if (userId && storageLimitMB > 0) {
         if (usedStorageMB + fileSizeMB > storageLimitMB) {
           throw new BadRequestException(
-            `Dung lượng lưu trữ đã vượt quá giới hạn cho phép (${storageLimitMB.toFixed(2)} MB).`,
+            `Dung lượng lưu trữ không đủ. Giới hạn: ${storageLimitMB.toFixed(2)} MB, Đã dùng: ${usedStorageMB.toFixed(2)} MB, Tệp mới: ${fileSizeMB.toFixed(2)} MB.`,
           );
         }
       }
@@ -118,7 +120,7 @@ export class UploadService {
       if (userId && storageLimitMB > 0) {
         if (usedStorageMB + fileSizeMB > storageLimitMB) {
           throw new BadRequestException(
-            `Dung lượng lưu trữ đã vượt quá giới hạn cho phép.`,
+            `Dung lượng lưu trữ không đủ. Giới hạn: ${storageLimitMB.toFixed(2)} MB, Đã dùng: ${usedStorageMB.toFixed(2)} MB, Tệp mới: ${fileSizeMB.toFixed(2)} MB.`,
           );
         }
       }

@@ -49,7 +49,9 @@ export class UserService {
     const permissions = updatePermissionDto.permissions.map((p) => {
       return this.permissionRepository.create({
         userId,
+        serId: p.serId,
         serName: p.serName,
+        packId: p.packId,
         packName: p.packName,
         ac: p.ac,
         expiredAt: p.expiredAt ? new Date(p.expiredAt) : undefined,
@@ -353,11 +355,13 @@ export class UserService {
     return totalLimit;
   }
 
-  async updateRecordLimit(userId: string, recordLimit: object) {
+  async updateRecordLimit(userId: string, key: string, value: number) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
     }
+    const recordLimit = user.recordLimit || {};
+    recordLimit[key] = value;
     user.recordLimit = recordLimit;
     return await this.userRepository.save(user);
   }

@@ -10,9 +10,19 @@ import {
 import { Type } from 'class-transformer';
 
 export class PermissionItem {
+  @ApiProperty({ example: 'ser_id_123', required: false })
+  @IsString()
+  @IsOptional()
+  serId?: string;
+
   @ApiProperty({ example: 'User' })
   @IsString()
   serName: string;
+
+  @ApiProperty({ example: 'pack_id_456', required: false })
+  @IsString()
+  @IsOptional()
+  packId?: string;
 
   @ApiProperty({ example: 'Basic' })
   @IsString()
