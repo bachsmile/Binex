@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsNotEmpty,
   IsBoolean,
+  IsArray,
 } from 'class-validator';
 
 export class CreateWeddingDto {
@@ -133,4 +134,16 @@ export class CreateWeddingDto {
   @IsBoolean()
   @IsOptional()
   isDeleted?: boolean;
+
+  @ApiProperty({ example: ['https://example.com/image1.jpg'], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  images?: string[];
+
+  @ApiProperty({ example: ['https://example.com/video1.mp4'], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  videos?: string[];
 }

@@ -9,11 +9,13 @@ import { AuthModule } from '../auth/auth.module';
 import { CardModule } from './features/card/card.module';
 import { WebModule } from './features/web/web.module';
 import { PackageModule } from './features/package/package.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Wedding]),
     AuthModule,
+    UserModule,
     CardModule,
     WebModule,
     PackageModule,

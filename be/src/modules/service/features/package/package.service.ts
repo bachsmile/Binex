@@ -60,4 +60,18 @@ export class PackageService {
   async removeAll() {
     return this.packageRepository.createQueryBuilder().delete().execute();
   }
+
+  async updateRecordLimit(id: string, key: string, value: number) {
+    const pack = await this.packageRepository.findOne({ where: { id } });
+    if (!pack) {
+      throw new Error('Package not found');
+    }
+    
+    const recordLimit = pack.recordLimit || {};
+    recordLimit[key] = value;
+    pack.recordLimit = recordLimit;
+    pack.updatedAt = new Date();
+    
+    return this.packageRepository.save(pack);
+  }
 }

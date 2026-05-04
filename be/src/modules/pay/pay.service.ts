@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 import { CryptoPayDto } from './dto/pay/crypto-pay.dto';
@@ -14,6 +10,9 @@ import {
 } from './entities/payment-request.entity';
 import { MethodPay } from './entities/method-pay.entity';
 import { Repository } from 'typeorm';
+import { MailService } from '../mail/mail.service';
+import { UserService } from '../user/user.service';
+import { OrderType } from './enums/order-type.enum';
 
 @Injectable()
 export class PayService {
@@ -27,6 +26,8 @@ export class PayService {
     private readonly paymentRequestRepository: Repository<PaymentRequest>,
     @InjectRepository(MethodPay)
     private readonly methodPayRepository: Repository<MethodPay>,
+    private readonly mailService: MailService,
+    private readonly userService: UserService,
   ) {
     const rpcUrl =
       this.configService.get<string>('PLASMA_RPC_URL') ||
@@ -224,7 +225,7 @@ export class PayService {
     }
 
     this.logger.log(
-      `New manual payment submission for order: ${manualPayDto.orderId}`,
+      `New manual payment submission for type: ${manualPayDto.orderType} (PK: ${manualPayDto.packageId}, SER: ${manualPayDto.serviceId})`,
     );
     const newRequest = this.paymentRequestRepository.create({
       ...manualPayDto,
@@ -260,6 +261,56 @@ export class PayService {
         `Payment request ${requestId} APPROVED. Unlocking service...`,
       );
       // Logic unlock dịch vụ tại đây
+      if (request.orderType === OrderType.CR_AC_ADMIN && request.userId) {
+        const user = await this.userService.activateUser(request.userId);
+        if (user) {
+          this.logger.log(
+            `User ${user.userName} activated via CR_AC_ADMIN order.`,
+          );
+          // Gửi mail thông báo
+          await this.mailService.sendAccountActivatedEmail(
+            user.email,
+            user.userName,
+          );
+        }
+      }
+
+      // Logic gia hạn gói (RN_AC_PK)
+      if (request.orderType === OrderType.RN_AC_PK && request.userId) {
+        const permission = await this.userService.findLatestPermissionByUserId(
+          request.userId,
+        );
+        const user = await this.userService.findOne(request.userId);
+
+        if (permission && user) {
+          let daysToExtend = 30; // Mặc định 30 ngày
+
+          if (request.packageId) {
+            const pkg = await this.userService.findPackageById(
+              request.packageId,
+            );
+            if (pkg && pkg.expire) {
+              daysToExtend = pkg.expire;
+            }
+          }
+
+          const updatedPermission = await this.userService.extendPermission(
+            permission.id,
+            daysToExtend,
+          );
+
+          // Gửi mail thông báo gia hạn
+          await this.mailService.sendPermissionExtendedEmail(
+            user.email,
+            user.userName,
+            updatedPermission.expiredAt,
+          );
+
+          this.logger.log(
+            `Permission for user ${user.userName} extended by ${daysToExtend} days.`,
+          );
+        }
+      }
     }
 
     return savedRequest;

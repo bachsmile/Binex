@@ -10,14 +10,33 @@ import {
 import { PackageService } from './package.service';
 import { CreatePackageDto } from '../../dto/package/create-package.dto';
 import { UpdatePackageDto } from '../../dto/package/update-package.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../../../auth/guards/auth.guard';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { Roles, Role } from 'src/decorators/roles.decorator';
+import { UpdatePackageRecordLimitDto } from '../../dto/package/update-record-limit.dto';
 
 @ApiTags('package')
+@ApiBearerAuth('JWT-auth')
 @Controller('package')
 export class PackageController {
   constructor(private readonly packageService: PackageService) {}
 
+  @Patch(':id/record-limit')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Gán key và giá trị giới hạn bản ghi cho Package' })
+  updateRecordLimit(
+    @Param('id') id: string,
+    @Body() data: UpdatePackageRecordLimitDto,
+  ) {
+    return this.packageService.updateRecordLimit(id, data.key, data.value);
+  }
+
   @Post()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
   create(@Body() createPackageDto: CreatePackageDto) {
     return this.packageService.create(createPackageDto);
   }

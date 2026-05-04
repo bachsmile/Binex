@@ -94,6 +94,15 @@ export class User {
   })
   status: UserStatus;
 
+  @Column({ type: 'decimal', precision: 12, scale: 4, default: 0 })
+  usedStorage: number; // Tổng dung lượng đã dùng (MB)
+
+  @Column({ type: 'decimal', precision: 12, scale: 4, default: 0 })
+  storageLimit: number; // Giới hạn dung lượng riêng (MB), 0 là dùng theo gói
+
+  @Column({ type: 'json', default: {} })
+  recordLimit: any; // Giới hạn bản ghi riêng { "key": limit }
+
   @Column({ nullable: true })
   isDeleted: boolean;
 

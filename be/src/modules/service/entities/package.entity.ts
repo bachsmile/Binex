@@ -34,6 +34,12 @@ export class Package {
   @Column()
   expire: number;
 
+  @Column({ default: 0 })
+  storageLimit: number; // Dung lượng tối đa (MB), 0 là không giới hạn
+
+  @Column({ type: 'json', default: {} })
+  recordLimit: any; // Giới hạn bản ghi theo từng loại { "key": limit }
+
   @Column()
   createdAt: Date;
 

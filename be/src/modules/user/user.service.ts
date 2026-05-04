@@ -25,6 +25,19 @@ export class UserService {
     private packageRepository: Repository<Package>,
   ) {}
 
+  async findPackageById(id: string) {
+    return await this.packageRepository.findOne({ where: { id } });
+  }
+
+  async activateUser(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      user.status = UserStatus.ACTIVE;
+      return await this.userRepository.save(user);
+    }
+    return null;
+  }
+
   async updatePermissions(
     userId: string,
     updatePermissionDto: UpdatePermissionDto,
@@ -45,6 +58,15 @@ export class UserService {
 
     // 3. Save to database
     return await this.permissionRepository.save(permissions);
+  }
+
+  async findLatestPermissionByUserId(
+    userId: string,
+  ): Promise<UserPermission | null> {
+    return await this.permissionRepository.findOne({
+      where: { userId },
+      order: { expiredAt: 'DESC' },
+    });
   }
 
   async extendPermission(permissionId: string, days: number) {
@@ -211,7 +233,7 @@ export class UserService {
     };
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     return this.userRepository.findOne({
       where: { id },
       relations: ['userPermissions'],
@@ -234,5 +256,109 @@ export class UserService {
     }
     const deletedUser = await this.userRepository.delete(id);
     return deletedUser;
+  }
+
+  async getUserStorageLimit(userId: string): Promise<number> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user && Number(user.storageLimit) > 0) {
+      return Number(user.storageLimit);
+    }
+
+    const now = new Date();
+    const permissions = await this.permissionRepository.find({
+      where: { userId },
+    });
+
+    const activePermissions = permissions.filter(
+      (p) => !p.expiredAt || p.expiredAt > now,
+    );
+
+    let totalLimit = 0;
+    for (const p of activePermissions) {
+      if (p.packId) {
+        const pkg = await this.packageRepository.findOne({
+          where: { id: p.packId },
+        });
+        if (pkg) {
+          if (pkg.storageLimit === 0) return 0; // Không giới hạn
+          totalLimit += pkg.storageLimit;
+        }
+      }
+    }
+    return totalLimit; // Trả về đơn vị MB
+  }
+
+  async updateUsedStorage(userId: string, mb: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      const currentUsed = Number(user.usedStorage) || 0;
+      user.usedStorage = Number((currentUsed + mb).toFixed(4));
+      await this.userRepository.save(user);
+    }
+  }
+
+  async updateStorageLimit(userId: string, limitMB: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    user.storageLimit = limitMB;
+    return await this.userRepository.save(user);
+  }
+
+  async getUserRecordLimit(userId: string, limitKey: string): Promise<number> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (
+      user &&
+      user.recordLimit &&
+      typeof user.recordLimit[limitKey] !== 'undefined'
+    ) {
+      const userLimit = Number(user.recordLimit[limitKey]);
+      if (userLimit > 0) return userLimit;
+    }
+
+    const now = new Date();
+    const permissions = await this.permissionRepository.find({
+      where: { userId },
+    });
+
+    const activePermissions = permissions.filter(
+      (p) => !p.expiredAt || p.expiredAt > now,
+    );
+
+    let totalLimit = 0;
+    let isUnlimited = false;
+
+    for (const p of activePermissions) {
+      if (p.packId) {
+        const pkg = await this.packageRepository.findOne({
+          where: { id: p.packId },
+        });
+        if (
+          pkg &&
+          pkg.recordLimit &&
+          typeof pkg.recordLimit[limitKey] !== 'undefined'
+        ) {
+          const pkgLimit = Number(pkg.recordLimit[limitKey]);
+          if (pkgLimit === 0) {
+            isUnlimited = true;
+            break;
+          }
+          totalLimit += pkgLimit;
+        }
+      }
+    }
+
+    if (isUnlimited) return 0;
+    return totalLimit;
+  }
+
+  async updateRecordLimit(userId: string, recordLimit: object) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    user.recordLimit = recordLimit;
+    return await this.userRepository.save(user);
   }
 }

@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 import { activationTemplate } from './templates/activation.template';
+import { accountActivatedTemplate } from './templates/account-activated.template';
+import { permissionExtendedTemplate } from './templates/permission-extended.template';
 
 @Injectable()
 export class MailService {
@@ -55,6 +57,55 @@ export class MailService {
     } catch (error) {
       this.logger.error(`Failed to send email to ${to}: ${error.message}`);
       throw new Error('Không thể gửi email. Vui lòng thử lại sau.');
+    }
+  }
+
+  async sendAccountActivatedEmail(email: string, name: string) {
+    const loginUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'https://app.binex.com/login';
+    const mailOptions = {
+      from: `"Binex System" <${this.configService.get<string>('SMTP_USER')}>`,
+      to: email,
+      subject: 'Tài khoản Binex của bạn đã được kích hoạt',
+      html: accountActivatedTemplate(name, loginUrl),
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Account activation email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send activation email to ${email}: ${error.message}`,
+      );
+    }
+  }
+
+  async sendPermissionExtendedEmail(
+    email: string,
+    name: string,
+    expiredAt: Date,
+  ) {
+    const expiredAtStr = expiredAt.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    const mailOptions = {
+      from: `"Binex System" <${this.configService.get<string>('SMTP_USER')}>`,
+      to: email,
+      subject: 'Dịch vụ Binex của bạn đã được gia hạn',
+      html: permissionExtendedTemplate(name, expiredAtStr),
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Permission extension email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send extension email to ${email}: ${error.message}`,
+      );
     }
   }
 }

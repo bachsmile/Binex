@@ -53,6 +53,7 @@ export class AuthService {
     const user = this.userRepository.create({
       ...createAuthDto,
       password: hashedPassword,
+      status: UserStatus.PENDING,
     });
     return this.userRepository.save(user);
   }

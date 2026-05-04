@@ -20,6 +20,7 @@ import { PayModule } from './modules/pay/pay.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MailModule } from './modules/mail/mail.module';
+import { FileManagerModule } from './modules/file-manager/file-manager.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -62,6 +63,7 @@ import { join } from 'path';
     FinanceModule,
     UploadModule,
     MailModule,
+    FileManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { ulid } from 'ulid';
 import { MethodPay } from './method-pay.entity';
+import { OrderType } from '../enums/order-type.enum';
 
 export enum PaymentRequestStatus {
   PENDING = 'pending',
@@ -29,8 +30,18 @@ export class PaymentRequest {
     }
   }
 
-  @Column()
-  orderId: string;
+  @Column({ nullable: true })
+  packageId?: string;
+
+  @Column({ nullable: true })
+  serviceId?: string;
+
+  @Column({
+    type: 'enum',
+    enum: OrderType,
+    default: OrderType.OTHER,
+  })
+  orderType: OrderType;
 
   @Column({ nullable: true })
   userId?: string;

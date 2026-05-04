@@ -124,4 +124,26 @@ export class UserController {
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }
+
+  @Patch(':id/storage-limit')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Cập nhật giới hạn dung lượng riêng cho người dùng',
+  })
+  updateStorageLimit(
+    @Param('id') id: string,
+    @Body('storageLimit') storageLimit: number,
+  ) {
+    return this.userService.updateStorageLimit(id, storageLimit);
+  }
+
+  @Patch(':id/record-limit')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Cập nhật bản đồ giới hạn bản ghi (JSON) cho người dùng' })
+  updateRecordLimit(
+    @Param('id') id: string,
+    @Body('recordLimit') recordLimit: object,
+  ) {
+    return this.userService.updateRecordLimit(id, recordLimit);
+  }
 }

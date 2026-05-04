@@ -1,11 +1,36 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { OrderType } from '../../enums/order-type.enum';
 
 export class ManualPayDto {
-  @ApiProperty({ example: 'order_123', description: 'Mã đơn hàng' })
+  @ApiProperty({
+    example: 'PK_001',
+    description: 'ID của gói',
+    required: false,
+  })
   @IsString()
+  @IsOptional()
+  packageId?: string;
+
+  @ApiProperty({
+    example: 'SER_001',
+    description: 'ID của dịch vụ',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  serviceId?: string;
+
+  @ApiProperty({ enum: OrderType, description: 'Loại đơn hàng' })
+  @IsEnum(OrderType)
   @IsNotEmpty()
-  orderId: string;
+  orderType: OrderType;
 
   @ApiProperty({ example: 100000, description: 'Số tiền đã chuyển' })
   @IsNumber()
