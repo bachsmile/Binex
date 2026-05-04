@@ -47,6 +47,7 @@ export class AuthController {
       generateKeyDto.serviceId,
       generateKeyDto.role,
       generateKeyDto.days,
+      generateKeyDto.mailto,
     );
   }
 

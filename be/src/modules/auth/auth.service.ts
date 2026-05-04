@@ -106,6 +106,7 @@ export class AuthService {
     serviceId: string,
     role?: Role,
     days?: number,
+    mailto?: string,
   ) {
     const key = Math.random().toString(36).substring(2, 10).toUpperCase();
 
@@ -121,7 +122,23 @@ export class AuthService {
       days,
       expiresAt,
     });
-    return await this.activationKeyRepository.save(activationKey);
+
+    const savedKey = await this.activationKeyRepository.save(activationKey);
+
+    // Nếu có mailto thì gửi mail ngay
+    if (mailto) {
+      const pkg = await this.packageRepository.findOne({
+        where: { id: packageId },
+      });
+      const packageName = pkg ? pkg.description : 'Gói dịch vụ';
+      await this.mailService.sendActivationKey(
+        mailto,
+        savedKey.key,
+        packageName,
+      );
+    }
+
+    return savedKey;
   }
 
   async getKeyInfo(key: string) {

@@ -31,4 +31,13 @@ export class GenerateKeyDto {
   @IsNumber()
   @IsOptional()
   days?: number;
+
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'Địa chỉ email để gửi mã kích hoạt trực tiếp',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  mailto?: string;
 }
