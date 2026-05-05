@@ -7,7 +7,10 @@ export class ActivateDto {
   @IsNotEmpty()
   key: string;
 
-  @ApiProperty({ example: 'user_123', description: 'ID người dùng cần kích hoạt' })
+  @ApiProperty({
+    example: 'user_123',
+    description: 'ID người dùng cần kích hoạt',
+  })
   @IsString()
   @IsNotEmpty()
   userId: string;

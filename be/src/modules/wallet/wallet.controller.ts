@@ -19,7 +19,8 @@ import { UseGuards } from '@nestjs/common';
 
 import { DepositDto } from './dto/deposit.dto';
 import { TransferDto } from './dto/transfer.dto';
-import { Role, Roles } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 
 @ApiTags('wallet')
 @ApiBearerAuth('JWT-auth')

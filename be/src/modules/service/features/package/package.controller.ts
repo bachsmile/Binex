@@ -14,7 +14,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles, Role } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from 'src/modules/auth/enums/role.enum';
 import { UpdatePackageRecordLimitDto } from '../../dto/package/update-record-limit.dto';
 
 @ApiTags('package')

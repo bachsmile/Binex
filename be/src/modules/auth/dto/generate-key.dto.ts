@@ -1,5 +1,11 @@
-import { IsNotEmpty, IsString, IsEnum, IsOptional, IsNumber } from 'class-validator';
-import { Role } from 'src/decorators/roles.decorator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
+import { Role } from '../enums/role.enum';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GenerateKeyDto {

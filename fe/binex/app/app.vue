@@ -7,6 +7,7 @@ const { activeTheme } = useTheme();
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <MouseFollower />
 </template>
 
 <style>

@@ -10,7 +10,7 @@ import {
   RequiredPermission,
 } from 'src/decorators/permissions.decorator';
 
-import { Role } from 'src/decorators/roles.decorator';
+import { Role } from '../enums/role.enum';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {

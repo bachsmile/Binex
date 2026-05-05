@@ -14,7 +14,8 @@ import { UpdateMethodPayDto } from '../../dto/method/update-method-pay.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles, Role } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from 'src/modules/auth/enums/role.enum';
 
 @ApiTags('method-pay')
 @ApiBearerAuth('JWT-auth')

@@ -20,7 +20,8 @@ import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
-import { Roles, Role } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 import { UserStatus } from './entities/user.entity';
 import { CheckPermissions } from 'src/decorators/permissions.decorator';
 import {
@@ -140,7 +141,9 @@ export class UserController {
 
   @Patch(':id/record-limit')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Gán key và giá trị giới hạn bản ghi cho người dùng' })
+  @ApiOperation({
+    summary: 'Gán key và giá trị giới hạn bản ghi cho người dùng',
+  })
   updateRecordLimit(
     @Param('id') id: string,
     @Body() data: UpdateUserRecordLimitDto,

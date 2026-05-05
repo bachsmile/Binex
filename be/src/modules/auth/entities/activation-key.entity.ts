@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { ulid } from 'ulid';
-import { Role } from '../../../decorators/roles.decorator';
+import { Role } from '../enums/role.enum';
 
 @Entity('activation_key')
 export class ActivationKey {

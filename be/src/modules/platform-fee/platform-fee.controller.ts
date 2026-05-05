@@ -13,7 +13,8 @@ import { CreatePlatformFeeDto } from './dto/create-platform-fee.dto';
 import { UpdatePlatformFeeDto } from './dto/update-platform-fee.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles, Role } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('platform-fee')

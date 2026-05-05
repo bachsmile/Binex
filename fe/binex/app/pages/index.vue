@@ -1,127 +1,156 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'blank',
+  layout: 'falling'
 })
 </script>
 
 <template>
-  <div class="relative min-h-screen w-full overflow-hidden bg-black text-white">
-    <!-- Video Background -->
-    <video
-      class="absolute inset-0 w-full h-full object-cover"
-      autoplay
-      loop
-      muted
-      playsinline
-    >
-      <source
-        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260403_050628_c4e32401-fab4-4a27-b7a8-6e9291cd5959.mp4"
-        type="video/mp4"
-      />
-    </video>
-
-    <!-- Page Content -->
-    <div class="relative z-10 flex flex-col min-h-screen">
-      <!-- Navbar -->
-      <nav class="px-6 md:px-12 lg:px-16 pt-6">
-        <div class="liquid-glass rounded-xl px-4 py-2 flex items-center justify-between">
-          <!-- Left: Logo -->
-          <span class="text-2xl font-semibold tracking-tight">VEX</span>
-
-          <!-- Center: Links (hidden on mobile) -->
-          <div class="hidden md:flex items-center gap-8">
-            <a
-              v-for="link in ['Story', 'Investing', 'Building', 'Advisory']"
-              :key="link"
-              href="#"
-              class="text-sm text-white/80 hover:text-gray-300 transition-colors duration-300"
-            >
-              {{ link }}
-            </a>
-          </div>
-
-          <!-- Right: CTA Button -->
-          <button
-            class="bg-white text-black px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors duration-300"
-          >
-            Start a Chat
-          </button>
+  <div class="zillas-style min-h-screen bg-white">
+    <!-- 1. Hero Section - Dark & Bold (Full Width) -->
+    <section class="relative w-full h-[90vh] flex flex-col justify-center items-center overflow-hidden bg-black px-6">
+      <div class="absolute inset-0 z-0">
+        <img src="/img/hero_tropical.png" class="w-full h-full object-cover opacity-60" />
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black"></div>
+      </div>
+      
+      <div class="relative z-10 max-w-6xl w-full">
+        <div class="text-[#CCFF00] uppercase tracking-[0.3em] font-bold text-sm mb-6 animate-slide-up">
+          Binex Ecosystem Center
         </div>
-      </nav>
+        <h1 class="text-6xl md:text-9xl font-black text-white leading-[0.9] tracking-tighter mb-8 animate-slide-up">
+          Unified Content & <br/>
+          <span class="text-white/90">Smart Management.</span>
+        </h1>
+        <div class="flex items-center gap-4 mt-12 animate-slide-up">
+          <div class="w-12 h-1 bg-[#CCFF00]"></div>
+          <div class="text-white uppercase tracking-widest text-xs font-bold">See How</div>
+        </div>
+      </div>
 
-      <!-- Hero Content -->
-      <div class="flex-1 flex flex-col justify-end px-6 md:px-12 lg:px-16 pb-12 lg:pb-16">
-        <div class="lg:grid lg:grid-cols-2 lg:items-end">
-          <!-- Left Column: Main Content -->
-          <div>
-            <!-- Animated Heading -->
-            <h1
-              class="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal mb-4"
-              :style="{ letterSpacing: '-0.04em' }"
-            >
-              <CommonsFadeIn :delay="0" :duration="0">
-                <CommonsAnimatedHeading
-                  :text="'Shaping tomorrow\nwith vision and action.'"
-                  :initial-delay="200"
-                  :char-delay="30"
-                  :transition-duration="500"
-                />
-              </CommonsFadeIn>
-            </h1>
+      <!-- Torn edge effect -->
+      <div class="absolute bottom-0 left-0 w-full h-20 bg-white" style="clip-path: polygon(0 100%, 100% 100%, 100% 0, 85% 60%, 70% 20%, 55% 80%, 40% 30%, 25% 90%, 10% 40%, 0 70%);"></div>
+    </section>
 
-            <!-- Subheading -->
-            <CommonsFadeIn :delay="800" :duration="1000">
-              <p class="text-base md:text-lg text-gray-300 mb-5">
-                We back visionaries and craft ventures that define what comes next.
-              </p>
-            </CommonsFadeIn>
+    <!-- 2. White Section - Growth/Partner -->
+    <section class="py-32 px-6 bg-white text-center">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Your Partner in</div>
+        <h2 class="text-6xl md:text-8xl font-black text-[#CCFF00] mb-10 tracking-tighter drop-shadow-sm">EFFICIENCY</h2>
+        <p class="text-xl text-slate-500 leading-relaxed mb-12 max-w-2xl mx-auto font-medium">
+          Binex giúp bạn xây dựng nền móng vững chắc cho việc quản trị cá nhân và doanh nghiệp, tối ưu hóa mọi nguồn lực để đạt được sự tăng trưởng vượt bậc.
+        </p>
+        <button class="px-10 py-5 bg-[#CCFF00] text-black font-black uppercase tracking-widest text-sm rounded-lg hover:scale-105 transition-all shadow-xl shadow-[#CCFF00]/20">
+          Schedule Your Consultation
+        </button>
+      </div>
+    </section>
 
-            <!-- Buttons -->
-            <CommonsFadeIn :delay="1200" :duration="1000">
-              <div class="flex flex-wrap gap-4">
-                <button
-                  class="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-300"
-                >
-                  Start a Chat
-                </button>
-                <button
-                  class="liquid-glass border border-white/20 text-white px-8 py-3 rounded-lg font-medium hover:bg-white hover:text-black transition-all duration-300"
-                >
-                  Explore Now
-                </button>
-              </div>
-            </CommonsFadeIn>
+    <!-- 3. Dark Section - Module Showcase -->
+    <section class="relative py-40 px-6 bg-[#0a0a0a] overflow-hidden">
+      <!-- Torn edge top -->
+      <div class="absolute top-0 left-0 w-full h-20 bg-white" style="clip-path: polygon(0 0, 100% 0, 100% 100%, 80% 30%, 65% 90%, 50% 20%, 35% 80%, 20% 40%, 0 100%);"></div>
+
+      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        <div>
+          <h2 class="text-5xl md:text-7xl font-black text-[#CCFF00] leading-tight mb-8">
+            Integrated <br/>
+            Digital <br/>
+            Solutions.
+          </h2>
+          <p class="text-lg text-white/40 leading-relaxed mb-12">
+            Khám phá các module chuyên biệt từ Quản lý tiệc cưới (Wedding) đến Trung tâm tài chính (Finance). Mỗi giải pháp được thiết kế để mang lại hiệu quả tối đa cho người dùng.
+          </p>
+          <div class="flex flex-col gap-6">
+            <NuxtLink to="/modules/wedding/VpWeddHome" class="group flex items-center gap-4 text-white hover:text-[#CCFF00] transition-colors">
+              <span class="w-12 h-1 bg-[#CCFF00]"></span>
+              <span class="text-xl font-bold uppercase tracking-widest">Wedding Module</span>
+            </NuxtLink>
+            <NuxtLink to="/finance" class="group flex items-center gap-4 text-white hover:text-[#CCFF00] transition-colors opacity-50">
+              <span class="w-12 h-px bg-white/20 group-hover:bg-[#CCFF00] group-hover:h-1 transition-all"></span>
+              <span class="text-xl font-bold uppercase tracking-widest">Finance Hub</span>
+            </NuxtLink>
           </div>
+        </div>
 
-          <!-- Right Column: Tag -->
-          <div class="flex items-end justify-start lg:justify-end mt-8 lg:mt-0">
-            <CommonsFadeIn :delay="1400" :duration="1000">
-              <div class="liquid-glass border border-white/20 px-6 py-3 rounded-xl">
-                <span class="text-lg md:text-xl lg:text-2xl font-light">
-                  Investing. Building. Advisory.
-                </span>
-              </div>
-            </CommonsFadeIn>
+        <!-- Showcase Image/Mockup -->
+        <div class="relative group">
+          <div class="absolute -inset-4 bg-[#CCFF00]/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div class="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+            <img src="/img/hero.png" class="w-full h-auto object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+          </div>
+          <!-- Trophy/Floating Badge like in image -->
+          <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-black border border-[#CCFF00]/30 rounded-2xl p-6 flex flex-col justify-center items-center shadow-2xl animate-bounce-slow">
+            <Icon name="ph:trophy-bold" class="text-5xl text-[#CCFF00] mb-2" />
+            <div class="text-[10px] text-[#CCFF00] font-black tracking-widest uppercase">Award Winner</div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- 4. Simple Contact / Call to Action -->
+    <section class="py-32 px-6 bg-white text-center border-t border-slate-100">
+      <h2 class="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight uppercase">Ready to Grow Your Business?</h2>
+      <p class="text-[#CCFF00] font-black tracking-[0.3em] text-xs uppercase mb-12">Ready to grow your business?</p>
+      <button class="px-10 py-5 bg-[#CCFF00] text-black font-black uppercase tracking-widest text-sm rounded-lg hover:bg-black hover:text-[#CCFF00] transition-all">
+        Schedule Your Consultation
+      </button>
+    </section>
+
+    <!-- 5. Map Section (Faked) -->
+    <section class="h-[600px] bg-slate-900 relative">
+      <div class="absolute inset-0 bg-black/40 z-10 pointer-events-none"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-full max-w-sm">
+        <div class="bg-white p-12 rounded-xl text-center shadow-2xl">
+          <div class="text-2xl font-black mb-4 tracking-tighter">BINEX <span class="text-[#CCFF00]">CENTER</span></div>
+          <p class="text-slate-400 text-sm mb-6 font-medium">123 Tech Avenue, Suite 100, <br/> Digital City, 00000</p>
+          <div class="text-[#CCFF00] font-black text-xs uppercase tracking-widest">Main Office</div>
+        </div>
+      </div>
+      <!-- Placeholder Map Pattern -->
+      <div class="w-full h-full opacity-30" style="background-image: radial-gradient(circle at 2px 2px, #CCFF00 1px, transparent 0); background-size: 40px 40px;"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 bg-black text-white px-6">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+        <div class="text-3xl font-black tracking-tighter">BINEX <span class="text-[#CCFF00]">CENTER.</span></div>
+        <div class="flex gap-8 text-xs font-bold uppercase tracking-widest text-white/40">
+          <a href="#" class="hover:text-[#CCFF00]">Home</a>
+          <a href="#" class="hover:text-[#CCFF00]">Services</a>
+          <a href="#" class="hover:text-[#CCFF00]">Cases</a>
+          <a href="#" class="hover:text-[#CCFF00]">Contact</a>
+        </div>
+      </div>
+      <div class="mt-20 pt-10 border-t border-white/5 text-center text-[10px] text-white/20 tracking-[0.5em] uppercase">
+        © 2024 Binex Core Engine. All rights reserved.
+      </div>
+    </footer>
   </div>
 </template>
 
 <style scoped>
-/* Disable the global transition-colors on this page to avoid interfering with hero animations */
-:deep(*) {
-  transition-property: none !important;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+.zillas-style {
+  font-family: 'Inter', sans-serif;
 }
-/* Re-enable transitions only where we explicitly want them */
-:deep(.transition-opacity) {
-  transition-property: opacity !important;
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-:deep(.transition-colors) {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke !important;
+
+.animate-slide-up {
+  animation: slide-up 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
-:deep(.transition-all) {
-  transition-property: all !important;
+
+.animate-bounce-slow {
+  animation: bounce 3s infinite ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
 }
 </style>

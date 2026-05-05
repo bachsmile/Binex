@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
 import { IsOptional, IsString } from 'class-validator';
-import { Role } from 'src/decorators/roles.decorator';
+import { Role } from '../../auth/enums/role.enum';
 import { UserStatus } from '../entities/user.entity';
 import { IsBoolean, IsDate, IsEnum } from 'class-validator';
 

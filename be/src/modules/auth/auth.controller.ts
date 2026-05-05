@@ -15,7 +15,12 @@ import { LoginDto } from './dto/login.dto';
 import { GenerateKeyDto } from './dto/generate-key.dto';
 import { ActivateDto } from './dto/activate.dto';
 
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
+import {
+  LoginResponse,
+  RegisterResponse,
+  RedeemKeyResponse,
+} from './responses/auth.response';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -23,24 +28,29 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @ApiOperation({ summary: 'Đăng nhập hệ thống' })
+  @ApiResponse({ status: 200, type: LoginResponse })
   login(@Body() loginDto: LoginDto, @Headers('x-role') xRole: string) {
     return this.authService.login(loginDto, xRole);
   }
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
+  @ApiResponse({ status: 201, type: RegisterResponse })
   register(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.create(createAuthDto);
   }
 
   @Post('register-ad')
   @ApiOperation({ summary: 'Đăng ký tài khoản admin mới' })
+  @ApiResponse({ status: 201, type: RegisterResponse })
   registerAd(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.createAd(createAuthDto);
   }
 
   @Post('generate-key')
   @ApiOperation({ summary: 'Tạo mã kích hoạt mới (Admin dùng)' })
+  @ApiResponse({ status: 201, type: String }) // Giả định trả về string key
   generateKey(@Body() generateKeyDto: GenerateKeyDto) {
     return this.authService.generateActivationKey(
       generateKeyDto.packageId,
@@ -53,6 +63,7 @@ export class AuthController {
 
   @Post('activate')
   @ApiOperation({ summary: 'Kích hoạt/Gia hạn tài khoản bằng mã' })
+  @ApiResponse({ status: 200, type: RedeemKeyResponse })
   activate(@Body() activateDto: ActivateDto) {
     return this.authService.redeemActivationKey(
       activateDto.userId,
@@ -62,6 +73,7 @@ export class AuthController {
 
   @Get('key-info/:key')
   @ApiOperation({ summary: 'Xem thông tin của mã kích hoạt' })
+  @ApiResponse({ status: 200, type: Object }) // Hoặc định nghĩa chi tiết hơn nếu cần
   getKeyInfo(@Param('key') key: string) {
     return this.authService.getKeyInfo(key);
   }

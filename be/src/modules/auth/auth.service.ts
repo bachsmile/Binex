@@ -3,7 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-
+import { LoginResponse, RedeemKeyResponse } from './responses/auth.response';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LoginDto } from './dto/login.dto';
@@ -12,7 +12,7 @@ import { User, UserStatus } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { Role } from 'src/decorators/roles.decorator';
+import { Role } from './enums/role.enum';
 import { ActivationKey } from './entities/activation-key.entity';
 import { Package } from '../service/entities/package.entity';
 import { UserPermission } from '../user/entities/user-permission.entity';
@@ -39,7 +39,7 @@ export class AuthService {
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
   ) {}
-  async create(createAuthDto: CreateAuthDto) {
+  async create(createAuthDto: CreateAuthDto): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: { userName: createAuthDto.userName },
     });
@@ -285,7 +285,7 @@ export class AuthService {
       packageName: pkg.name,
       newExpiredAt,
       roleUpdated: !!activationKey.role,
-    };
+    } as RedeemKeyResponse;
   }
 
   findAll() {
@@ -323,7 +323,7 @@ export class AuthService {
     return result;
   }
 
-  async login(loginDto: LoginDto, xRole?: string) {
+  async login(loginDto: LoginDto, xRole?: string): Promise<LoginResponse> {
     const user = await this.validateUser(loginDto.userName, loginDto.password);
 
     // Validate if user has permission for the requested x-role

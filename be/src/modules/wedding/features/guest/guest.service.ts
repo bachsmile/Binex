@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Guest, GuestSide, GuestStatus } from '../../entities/guest.entity';
@@ -84,7 +88,9 @@ export class GuestService {
     const guests = data.map((item: any) => {
       // Chuẩn hóa side
       let side = GuestSide.GROOM;
-      const rawSide = (item['Phía'] || item['side'] || '').toString().toLowerCase();
+      const rawSide = (item['Phía'] || item['side'] || '')
+        .toString()
+        .toLowerCase();
       if (rawSide.includes('gái') || rawSide.includes('bride')) {
         side = GuestSide.BRIDE;
       }

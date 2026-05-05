@@ -9,7 +9,7 @@ import { UserPermission } from './entities/user-permission.entity';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { Service } from '../service/entities/service.entity';
 import { Package } from '../service/entities/package.entity';
-import { Role } from 'src/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 import { UserStatus } from './entities/user.entity';
 
 @Injectable()

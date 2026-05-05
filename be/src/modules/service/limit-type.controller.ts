@@ -11,7 +11,8 @@ import {
 import { LimitTypeService } from './limit-type.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles, Role } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateLimitTypeDto } from './dto/create-limit-type.dto';
 import { UpdateLimitTypeDto } from './dto/update-limit-type.dto';

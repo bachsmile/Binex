@@ -11,7 +11,7 @@ import { ulid } from 'ulid';
 import { Wedding } from '../../wedding/entities/wedding.entity';
 import { WdWeb } from '../../wedding/entities/wd-web.entity';
 import { WdCard } from '../../wedding/entities/wd-card.entity';
-import { Role } from 'src/decorators/roles.decorator';
+import { Role } from '../../auth/enums/role.enum';
 import { UserPermission } from './user-permission.entity';
 
 export enum UserStatus {
