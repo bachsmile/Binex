@@ -17,7 +17,9 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
+    "@iconify-json/ph": "^1.2.2",
     "@nuxtjs/color-mode": "^4.0.0",
-    "@nuxtjs/tailwindcss": "^6.14.0"
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@vite-pwa/nuxt": "^1.1.1"
   }
 }

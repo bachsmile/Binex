@@ -227,8 +227,8 @@ export class UserService {
   }
 
   async findPage(
-    pageNumber: number = 1,
-    pageSize: number = 10,
+    page: number = 1,
+    limit: number = 10,
     status?: UserStatus,
     role?: Role,
   ) {
@@ -238,16 +238,14 @@ export class UserService {
 
     const [data, total] = await this.userRepository.findAndCount({
       where,
-      skip: (pageNumber - 1) * pageSize,
-      take: pageSize,
+      skip: (page - 1) * limit,
+      take: limit,
       relations: ['userPermissions'],
       order: { createdAt: 'DESC' },
     });
     return {
       data,
       total,
-      pageNumber,
-      pageSize,
     };
   }
 

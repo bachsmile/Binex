@@ -37,8 +37,13 @@ export class WeddingService {
     return this.weddingRepository.save(wedding);
   }
 
-  findAll() {
-    return this.weddingRepository.find();
+  async findAll(page: number = 1, limit: number = 10) {
+    const [data, total] = await this.weddingRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+    return { data, total };
   }
 
   async findOne(id: string) {

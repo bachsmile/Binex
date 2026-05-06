@@ -15,8 +15,13 @@ export class LimitTypeService {
     return await this.limitTypeRepository.save(limitType);
   }
 
-  async findAll() {
-    return await this.limitTypeRepository.find({ order: { key: 'ASC' } });
+  async findAll(page: number = 1, limit: number = 10) {
+    const [data, total] = await this.limitTypeRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { id: 'ASC' },
+    });
+    return { data, total };
   }
 
   async findOne(id: number) {

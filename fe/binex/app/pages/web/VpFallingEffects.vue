@@ -8,6 +8,7 @@
 
 <script setup>
 definePageMeta({
-  layout: 'falling'
+  layout: 'falling',
+  path: '/falling-effects'
 })
 </script>

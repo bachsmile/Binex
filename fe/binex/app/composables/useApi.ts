@@ -5,6 +5,9 @@ export const useApi = () => {
   const loading = ref(false);
   const error = ref<ApiError | null>(null);
 
+  const config = useRuntimeConfig();
+  const apiBaseUrl = config.public.apiBaseUrl;
+
   const call = async <T = any, E = ApiError>(
     url: string,
     method: string = "GET",
@@ -19,6 +22,7 @@ export const useApi = () => {
 
     try {
       const response = await $fetch<T>(url, {
+        baseURL: apiBaseUrl,
         method: upperMethod,
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

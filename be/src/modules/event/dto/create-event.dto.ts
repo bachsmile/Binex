@@ -9,7 +9,7 @@ import {
 import { EventStatus } from '../entities/event.entity';
 
 export class CreateEventDto {
-  @ApiProperty({ example: 'Lễ Thành Hôn' })
+  @ApiProperty({ example: 'Tên sự kiện' })
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -34,7 +34,11 @@ export class CreateEventDto {
   @IsOptional()
   endDate?: string;
 
-  @ApiProperty({ enum: EventStatus, default: EventStatus.UPCOMING, required: false })
+  @ApiProperty({
+    enum: EventStatus,
+    default: EventStatus.UPCOMING,
+    required: false,
+  })
   @IsEnum(EventStatus)
   @IsOptional()
   status?: EventStatus;
@@ -43,11 +47,6 @@ export class CreateEventDto {
   @IsString()
   @IsOptional()
   image?: string;
-
-  @ApiProperty({ description: 'ID của đám cưới (nếu có)', required: false })
-  @IsString()
-  @IsOptional()
-  weddingId?: string;
 
   @IsString()
   @IsOptional()

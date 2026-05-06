@@ -125,14 +125,24 @@ export class WalletService {
     return publicKey;
   }
 
-  findAll() {
-    return this.walletRepository.find({
+  async findAll(page: number = 1, limit: number = 10) {
+    const [data, total] = await this.walletRepository.findAndCount({
       relations: ['user'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
+    return { data, total };
   }
 
-  findAllByUserId(userId: string) {
-    return this.walletRepository.find({ where: { userId } });
+  async findAllByUserId(userId: string, page: number = 1, limit: number = 10) {
+    const [data, total] = await this.walletRepository.findAndCount({
+      where: { userId },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+    return { data, total };
   }
 
   findOne(id: string) {

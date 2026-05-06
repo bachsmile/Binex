@@ -57,6 +57,9 @@ export class Event {
   @Column()
   createdBy: string;
 
+  @Column('text', { array: true, default: '{}' })
+  participantIds: string[];
+
   @ManyToOne(() => User)
   user: User;
 

@@ -11,14 +11,14 @@ export const usePayApi = () => {
     findAll: () => 
       api.call<any, ApiError>('/method-pay', 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/method-pay/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/method-pay/${payload}`, 'GET'),
 
     update: () => 
-      api.call<any, ApiError>('/method-pay/:id', 'PATCH'),
+      api.call<any, ApiError>(`/method-pay/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/method-pay/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/method-pay/${payload}`, 'DELETE'),
 
   };
 };

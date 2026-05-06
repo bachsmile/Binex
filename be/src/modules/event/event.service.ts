@@ -20,13 +20,14 @@ export class EventService {
     return await this.eventRepository.save(event);
   }
 
-  async findAll(userId?: string) {
-    const where = userId ? { createdBy: userId } : {};
-    return await this.eventRepository.find({
-      where,
-      order: { startDate: 'ASC' },
-      relations: ['wedding'],
+  async findAll(userId: string, page: number = 1, limit: number = 10) {
+    const [data, total] = await this.eventRepository.findAndCount({
+      where: { createdBy: userId },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
+    return { data, total };
   }
 
   async findOne(id: string) {
@@ -47,5 +48,14 @@ export class EventService {
   async remove(id: string) {
     const event = await this.findOne(id);
     return await this.eventRepository.remove(event);
+  }
+
+  async updateParticipants(
+    id: string,
+    updateParticipantsDto: import('./dto/update-participants.dto').UpdateParticipantsDto,
+  ) {
+    const event = await this.findOne(id);
+    event.participantIds = updateParticipantsDto.participantIds;
+    return await this.eventRepository.save(event);
   }
 }

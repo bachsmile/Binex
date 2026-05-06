@@ -7,7 +7,6 @@ import type { RegisterResponse } from '~/types/response/auth';
 import type { GenerateKeyDto } from '~/types/payload/auth';
 import type { ActivateDto } from '~/types/payload/auth';
 import type { RedeemKeyResponse } from '~/types/response/auth';
-import type { UpdateAuthDto } from '~/types/payload/auth';
 
 export const useAuthApi = () => {
   const api = useApi();
@@ -27,17 +26,17 @@ export const useAuthApi = () => {
     activate: (payload: ActivateDto) => 
       api.call<RedeemKeyResponse, ApiError>('/auth/activate', 'POST', payload),
 
-    getKeyInfo: () => 
-      api.call<Object, ApiError>('/auth/key-info/:key', 'GET'),
+    getKeyInfo: (payload: string) => 
+      api.call<Object, ApiError>(`/auth/key-info/${payload}`, 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/auth/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/auth/${payload}`, 'GET'),
 
-    update: (payload: UpdateAuthDto) => 
-      api.call<any, ApiError>('/auth/:id', 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<any, ApiError>(`/auth/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/auth/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/auth/${payload}`, 'DELETE'),
 
   };
 };

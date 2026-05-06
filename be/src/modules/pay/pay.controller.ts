@@ -58,7 +58,15 @@ export class PayController {
 
   @Get('manual/requests')
   @ApiOperation({ summary: 'Lấy danh sách yêu cầu thanh toán chuyển khoản' })
-  async getPaymentRequests(@Query('status') status?: PaymentRequestStatus) {
-    return this.payService.getPaymentRequests(status);
+  async getPaymentRequests(
+    @Query('status') status?: PaymentRequestStatus,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.payService.getPaymentRequests(
+      status,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
   }
 }

@@ -10,6 +10,7 @@ import { WdCard } from './modules/wedding/entities/wd-card.entity';
 import { WeddingPackage } from './modules/wedding/entities/wedding-package.entity';
 import { Wallet } from './modules/wallet/entities/wallet.entity';
 import { Transaction } from './modules/wallet/entities/transaction.entity';
+import { News } from './modules/news/entities/news.entity';
 import { UserModule } from './modules/user/user.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -23,6 +24,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { FileManagerModule } from './modules/file-manager/file-manager.module';
 import { EventModule } from './modules/event/event.module';
 import { PlatformFeeModule } from './modules/platform-fee/platform-fee.module';
+import { NewsModule } from './modules/news/news.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -50,6 +52,7 @@ import { join } from 'path';
           WeddingPackage,
           Wallet,
           Transaction,
+          News,
         ],
         autoLoadEntities: true,
         synchronize: true,
@@ -68,6 +71,7 @@ import { join } from 'path';
     FileManagerModule,
     EventModule,
     PlatformFeeModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

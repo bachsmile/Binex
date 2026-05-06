@@ -8,10 +8,12 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { UpdateParticipantsDto } from './dto/update-participants.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -30,8 +32,16 @@ export class EventController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách sự kiện của tôi' })
-  findAll(@Request() req) {
-    return this.eventService.findAll(req.user.id);
+  findAll(
+    @Request() req,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.eventService.findAll(
+      req.user.id,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
   }
 
   @Get(':id')
@@ -50,5 +60,14 @@ export class EventController {
   @ApiOperation({ summary: 'Xóa sự kiện' })
   remove(@Param('id') id: string) {
     return this.eventService.remove(id);
+  }
+
+  @Patch(':id/participants')
+  @ApiOperation({ summary: 'Cập nhật danh sách người tham gia' })
+  updateParticipants(
+    @Param('id') id: string,
+    @Body() updateParticipantsDto: UpdateParticipantsDto,
+  ) {
+    return this.eventService.updateParticipants(id, updateParticipantsDto);
   }
 }

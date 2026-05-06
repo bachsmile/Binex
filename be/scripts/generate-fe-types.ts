@@ -25,12 +25,14 @@ function generateAll() {
   files.forEach((file) => {
     const content = fs.readFileSync(path.join(BE_SRC, file), 'utf8');
     const moduleName = getModuleName(file);
-    const regex = /export (class|interface|type|enum) (\w+)/g;
+    const regex =
+      /export (class|interface|type|enum) (\w+)(?:\s+extends\s+PartialType\((\w+)\))?/g;
     let match;
 
     while ((match = regex.exec(content)) !== null) {
       const kind = match[1];
       const typeName = match[2];
+      const partialParent = match[3];
 
       // Bỏ qua các class hệ thống nếu lọt lưới
       if (
@@ -56,42 +58,37 @@ function generateAll() {
           let body = content.substring(startIndex + 1, endIndex);
 
           if (kind !== 'enum') {
-            // 1. Xóa các Decorator (@ApiProperty, @Column, v.v.)
-            body = body.replace(/@\w+\s*\([\s\S]*?\)/g, '');
-            body = body.replace(/@\w+/g, '');
+            // 1. Nhận diện @IsOptional và đánh dấu các dòng cần thêm '?'
+            const lines = body.split('\n');
+            const processedLines: string[] = [];
+            let isOptional = false;
 
-            // 2. Xóa tất cả các phương thức (methods) trong class
-            const methodRegex = /\w+\s*\([\s\S]*?\)\s*\{/g;
-            let mMatch;
-            while ((mMatch = methodRegex.exec(body)) !== null) {
-              const mEnd = getClosingBracketIndex(
-                body,
-                mMatch.index + mMatch[0].length - 1,
-              );
-              if (mEnd !== -1) {
-                body = body.replace(body.substring(mMatch.index, mEnd + 1), '');
-                methodRegex.lastIndex = 0; // Reset regex sau khi thay đổi chuỗi
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.includes('@IsOptional')) {
+                isOptional = true;
+                continue;
+              }
+              if (trimmed.startsWith('@')) continue; // Bỏ qua các decorator khác
+
+              if (trimmed.includes(':')) {
+                const parts = trimmed.split(':');
+                let prop = parts[0].trim();
+                const type = parts[1].trim();
+
+                if (isOptional && !prop.includes('?')) {
+                  prop = `${prop}?`;
+                }
+                processedLines.push(`  ${prop.trim()}: ${type.trim()}`);
+                isOptional = false; // Reset sau khi áp dụng
+              } else if (trimmed === '') {
+                processedLines.push('');
               }
             }
 
-            // 3. Chỉ giữ lại các dòng định nghĩa thuộc tính
-            const cleanLines = body
-              .split('\n')
-              .map((line) => {
-                const trimmed = line.trim();
-                if (
-                  !trimmed ||
-                  trimmed.startsWith('/') ||
-                  trimmed.startsWith('*') ||
-                  trimmed.includes('(')
-                )
-                  return null;
-                if (trimmed.includes(':')) return `  ${trimmed}`;
-                return null;
-              })
-              .filter((l) => l !== null);
-
-            body = cleanLines.join('\n');
+            body = processedLines
+              .filter((l) => l !== null && !l.includes('('))
+              .join('\n');
           }
 
           if (!resultStructure[category][moduleName])
@@ -99,7 +96,7 @@ function generateAll() {
           resultStructure[category][moduleName] +=
             kind === 'enum'
               ? `export enum ${typeName} {\n${body}\n}\n\n`
-              : `export interface ${typeName} {\n${body}\n}\n\n`;
+              : `export interface ${typeName}${partialParent ? ` extends Partial<${partialParent}>` : ''} {\n${body}\n}\n\n`;
         }
       }
     }
@@ -170,12 +167,23 @@ function generateAll() {
       let respType = ep.responseType || 'any';
       if (['String', 'Number', 'Boolean'].includes(respType))
         respType = respType.toLowerCase();
+      let finalPath = ep.path;
       const payloadArg = ep.payloadType ? `payload: ${ep.payloadType}` : '';
-      const callArgs = ep.payloadType
-        ? `, ${ep.method === 'GET' ? '{ params: payload }' : 'payload'}`
-        : '';
+      let callArgs = ep.payloadType ? `, payload` : '';
 
-      methods += `    ${ep.name}: (${payloadArg}) => \n      api.call<${respType}, ApiError>('${ep.path}', '${ep.method}'${callArgs}),\n\n`;
+      // Nếu path có biến (ví dụ: /news/:id), chuyển sang template literal
+      if (finalPath.includes(':')) {
+        const pathVarMatch = finalPath.match(/:(\w+)/);
+        if (pathVarMatch) {
+          const varName = pathVarMatch[1];
+          finalPath = finalPath.replace(`:${varName}`, `\${payload}`);
+          // Nếu path có biến thì payload chính là biến đó (thường là string/id)
+          callArgs = ''; // Không truyền payload vào params/body nữa vì nó nằm trong URL
+        }
+      }
+
+      const pathQuote = finalPath.includes('${') ? '`' : "'";
+      methods += `    ${ep.name}: (${payloadArg}) => \n      api.call<${respType}, ApiError>(${pathQuote}${finalPath}${pathQuote}, '${ep.method}'${callArgs}),\n\n`;
     });
 
     const importLines = Array.from(typesToImport).map((t) => {
@@ -261,6 +269,16 @@ function extractEndpoints(content: string) {
         if (funcMatch && !methodName) methodName = funcMatch[1];
         const bodyMatch = /@Body\(\)\s*(?:\w+:\s*)?(\w+)/.exec(nextLine);
         if (bodyMatch) payloadType = bodyMatch[1];
+        const queryMatch = /@Query\(\)\s*(?:\w+:\s*)?(\w+)/.exec(nextLine);
+        if (queryMatch) payloadType = queryMatch[1] || 'any';
+
+        // Nhận diện @Param để tạo tham số cho URL (ví dụ: id)
+        const paramMatch = /@Param\(['"](\w+)['"]\)\s*(\w+)/.exec(nextLine);
+        if (paramMatch) {
+          const paramName = paramMatch[2];
+          payloadType = 'string'; // Mặc định là string cho ID
+        }
+
         if (methodName) break;
       }
       if (methodName)
@@ -277,7 +295,10 @@ function extractEndpoints(content: string) {
 }
 
 function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return s
+    .split(/[-_]/)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join('');
 }
 
 generateAll();

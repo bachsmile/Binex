@@ -4,6 +4,7 @@ export * from './user';
 export * from './service';
 export * from './platform-fee';
 export * from './pay';
+export * from './news';
 export * from './finance';
 export * from './file-manager';
 export * from './event';

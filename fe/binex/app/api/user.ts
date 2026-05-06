@@ -1,22 +1,21 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
 import type { CreateUserDto } from '~/types/payload/user';
-import type { UpdateUserDto } from '~/types/payload/user';
 
 export const useUserApi = () => {
   const api = useApi();
   return {
     updatePermissions: () => 
-      api.call<any, ApiError>('/user/:id/permissions', 'PATCH'),
+      api.call<any, ApiError>(`/user/${payload}/permissions`, 'PATCH'),
 
     n: () => 
-      api.call<any, ApiError>('/user/permission/:id/extend', 'PATCH'),
+      api.call<any, ApiError>(`/user/permission/${payload}/extend`, 'PATCH'),
 
     n: () => 
-      api.call<any, ApiError>('/user/permission/:id/change-package', 'PATCH'),
+      api.call<any, ApiError>(`/user/permission/${payload}/change-package`, 'PATCH'),
 
-    getUserPermissions: () => 
-      api.call<any, ApiError>('/user/:userId/permissions', 'GET'),
+    getUserPermissions: (payload: string) => 
+      api.call<any, ApiError>(`/user/${payload}/permissions`, 'GET'),
 
     create: (payload: CreateUserDto) => 
       api.call<any, ApiError>('/user', 'POST', payload),
@@ -27,20 +26,20 @@ export const useUserApi = () => {
     findPage: () => 
       api.call<any, ApiError>('/user/page', 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/user/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/user/${payload}`, 'GET'),
 
-    update: (payload: UpdateUserDto) => 
-      api.call<any, ApiError>('/user/:id', 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<any, ApiError>(`/user/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/user/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/user/${payload}`, 'DELETE'),
 
     updateStorageLimit: () => 
-      api.call<any, ApiError>('/user/:id/storage-limit', 'PATCH'),
+      api.call<any, ApiError>(`/user/${payload}/storage-limit`, 'PATCH'),
 
     updateRecordLimit: () => 
-      api.call<any, ApiError>('/user/:id/record-limit', 'PATCH'),
+      api.call<any, ApiError>(`/user/${payload}/record-limit`, 'PATCH'),
 
   };
 };

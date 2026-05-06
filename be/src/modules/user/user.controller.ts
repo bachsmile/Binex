@@ -99,14 +99,14 @@ export class UserController {
   @Roles(Role.ADMIN, Role.MANAGER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Lấy danh sách người dùng phân trang' })
   findPage(
-    @Query('pageNumber') pageNumber?: number,
-    @Query('pageSize') pageSize?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('status') status?: UserStatus,
     @Query('role') role?: Role,
   ) {
     return this.userService.findPage(
-      Number(pageNumber) || 1,
-      Number(pageSize) || 10,
+      Number(page) || 1,
+      Number(limit) || 10,
       status,
       role,
     );

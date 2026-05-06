@@ -2,7 +2,7 @@
 import type { ApiError } from '~/types/api-error';
 import type { CreatePlatformFeeDto } from '~/types/payload/platform-fee';
 
-export const usePlatform-feeApi = () => {
+export const usePlatformFeeApi = () => {
   const api = useApi();
   return {
     create: (payload: CreatePlatformFeeDto) => 
@@ -11,14 +11,14 @@ export const usePlatform-feeApi = () => {
     findAll: () => 
       api.call<any, ApiError>('/platform-fee', 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/platform-fee/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/platform-fee/${payload}`, 'GET'),
 
     update: () => 
-      api.call<any, ApiError>('/platform-fee/:id', 'PATCH'),
+      api.call<any, ApiError>(`/platform-fee/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/platform-fee/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/platform-fee/${payload}`, 'DELETE'),
 
   };
 };

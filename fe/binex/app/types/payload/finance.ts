@@ -1,7 +1,7 @@
 /** Auto-generated payload */
 
 
-export interface UpdateStockDto {
+export interface UpdateStockDto extends Partial<CreateStockDto> {
 
 }
 
@@ -9,7 +9,7 @@ export interface CreateStockDto {
 
 }
 
-export interface UpdateInvestmentDto {
+export interface UpdateInvestmentDto extends Partial<CreateInvestmentDto> {
 
 }
 
@@ -17,7 +17,7 @@ export interface CreateInvestmentDto {
 
 }
 
-export interface UpdateCurrencyDto {
+export interface UpdateCurrencyDto extends Partial<CreateCurrencyDto> {
 
 }
 
@@ -25,7 +25,7 @@ export interface CreateCurrencyDto {
 
 }
 
-export interface UpdateCryptoDto {
+export interface UpdateCryptoDto extends Partial<CreateCryptoDto> {
 
 }
 
@@ -33,7 +33,7 @@ export interface CreateCryptoDto {
 
 }
 
-export interface UpdateFinanceDto {
+export interface UpdateFinanceDto extends Partial<CreateFinanceDto> {
 
 }
 

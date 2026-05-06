@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'falling'
+  layout: 'falling',
+  path: '/modules/wedding/VpWeddHome'
 })
 </script>
 

@@ -35,8 +35,16 @@ export class WalletController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: any) {
-    return this.walletService.findAllByUserId(user?.id);
+  findAll(
+    @CurrentUser() user: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.walletService.findAllByUserId(
+      user?.id,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
   }
 
   @Roles(Role.SUPER_ADMIN)

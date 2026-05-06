@@ -1,7 +1,6 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
 import type { CreateCryptoDto } from '~/types/payload/finance';
-import type { UpdateCryptoDto } from '~/types/payload/finance';
 
 export const useFinanceApi = () => {
   const api = useApi();
@@ -12,14 +11,14 @@ export const useFinanceApi = () => {
     findAll: () => 
       api.call<any, ApiError>('/finance/crypto', 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/finance/crypto/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/finance/crypto/${payload}`, 'GET'),
 
-    update: (payload: UpdateCryptoDto) => 
-      api.call<any, ApiError>('/finance/crypto/:id', 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<any, ApiError>(`/finance/crypto/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/finance/crypto/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/finance/crypto/${payload}`, 'DELETE'),
 
   };
 };

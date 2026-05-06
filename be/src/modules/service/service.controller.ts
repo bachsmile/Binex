@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ServiceService } from './service.service';
 import { CreateServiceDto } from './dto/service/create-service.dto';
@@ -23,8 +24,8 @@ export class ServiceController {
   }
 
   @Get()
-  findAll() {
-    return this.serviceService.findAll();
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.serviceService.findAll(Number(page) || 1, Number(limit) || 10);
   }
 
   @Get(':id')
@@ -50,6 +51,6 @@ export class ServiceController {
   @Get('priority/:priority')
   async findWithPriority(@Param('priority') priority: number) {
     const services = await this.serviceService.findAll();
-    return services.filter((service) => service.priority == priority);
+    return services.data.filter((service) => service.priority == priority);
   }
 }

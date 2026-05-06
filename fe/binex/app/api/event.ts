@@ -1,7 +1,6 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
 import type { CreateEventDto } from '~/types/payload/event';
-import type { UpdateEventDto } from '~/types/payload/event';
 
 export const useEventApi = () => {
   const api = useApi();
@@ -12,14 +11,17 @@ export const useEventApi = () => {
     findAll: () => 
       api.call<any, ApiError>('/event', 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/event/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/event/${payload}`, 'GET'),
 
-    update: (payload: UpdateEventDto) => 
-      api.call<any, ApiError>('/event/:id', 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<any, ApiError>(`/event/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/event/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/event/${payload}`, 'DELETE'),
+
+    updateParticipants: () => 
+      api.call<any, ApiError>(`/event/${payload}/participants`, 'PATCH'),
 
   };
 };

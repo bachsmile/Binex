@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 
 definePageMeta({
-  layout: false 
+  layout: false,
+  path: '/register'
 });
 
 const card = ref(null);

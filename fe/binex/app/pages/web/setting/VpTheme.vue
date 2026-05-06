@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'default',
+  path: '/setting/theme'
+})
 
 const { themes, currentThemeId, activeTheme } = useTheme();
 

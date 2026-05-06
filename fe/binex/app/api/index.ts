@@ -6,6 +6,7 @@ export * from './upload';
 export * from './service';
 export * from './platform-fee';
 export * from './pay';
+export * from './news';
 export * from './mail';
 export * from './finance';
 export * from './file-manager';

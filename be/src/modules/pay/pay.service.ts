@@ -319,11 +319,18 @@ export class PayService {
   /**
    * Lấy danh sách yêu cầu thanh toán (cho Admin)
    */
-  async getPaymentRequests(status?: PaymentRequestStatus) {
-    return await this.paymentRequestRepository.find({
+  async getPaymentRequests(
+    status?: PaymentRequestStatus,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const [data, total] = await this.paymentRequestRepository.findAndCount({
       where: status ? { status } : {},
       relations: ['methodPay'],
+      skip: (page - 1) * limit,
+      take: limit,
       order: { createdAt: 'DESC' },
     });
+    return { data, total };
   }
 }

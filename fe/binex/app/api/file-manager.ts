@@ -2,7 +2,7 @@
 import type { ApiError } from '~/types/api-error';
 
 
-export const useFile-managerApi = () => {
+export const useFileManagerApi = () => {
   const api = useApi();
   return {
     getMyFiles: () => 
@@ -11,8 +11,8 @@ export const useFile-managerApi = () => {
     getStats: () => 
       api.call<any, ApiError>('/file-manager/stats', 'GET'),
 
-    deleteFile: () => 
-      api.call<any, ApiError>('/file-manager/:id', 'DELETE'),
+    deleteFile: (payload: string) => 
+      api.call<any, ApiError>(`/file-manager/${payload}`, 'DELETE'),
 
   };
 };

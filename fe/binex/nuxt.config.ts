@@ -2,6 +2,11 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.API_BASE_URL || "http://localhost:3000",
+    },
+  },
   app: {
     head: {
       link: [
@@ -23,7 +28,31 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxtjs/tailwindcss",
     "@nuxtjs/color-mode",
+    "@vite-pwa/nuxt",
   ],
+  pwa: {
+    manifest: {
+      name: 'Binex Ecosystem Center',
+      short_name: 'Binex+',
+      description: 'Unified Content & Smart Management Ecosystem',
+      theme_color: '#000000',
+      background_color: '#000000',
+      icons: [
+        {
+          src: '/icon.png',
+          sizes: '512x512',
+          type: 'image/png'
+        }
+      ]
+    },
+    workbox: {
+      navigateFallback: '/'
+    },
+    devOptions: {
+      enabled: false,
+      type: 'module'
+    }
+  },
   colorMode: {
     classSuffix: "-mode",
   },
@@ -32,7 +61,11 @@ export default defineNuxtConfig({
   },
   vite: {
     optimizeDeps: {
-      include: ["@vue/devtools-core", "@vue/devtools-kit"],
+      include: [
+        "@vue/devtools-core",
+        "@vue/devtools-kit",
+        "workbox-window"
+      ],
     },
   },
 });

@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { WeddingService } from './wedding.service';
 import { CreateWeddingDto } from './dto/wedding/create-wedding.dto';
@@ -24,8 +25,8 @@ export class WeddingController {
   }
 
   @Get()
-  findAll() {
-    return this.weddingService.findAll();
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.weddingService.findAll(Number(page) || 1, Number(limit) || 10);
   }
 
   @Get(':id')

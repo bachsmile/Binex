@@ -4,7 +4,8 @@ import { useAuthApi } from '~/api/auth';
 import type { LoginDto } from '~/types/payload/auth';
 
 definePageMeta({
-  layout: false
+  layout: false,
+  path: '/login'
 });
 
 const card = ref<HTMLElement | null>(null);

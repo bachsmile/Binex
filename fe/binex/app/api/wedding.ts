@@ -1,7 +1,6 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
 import type { CreateWdCardDto } from '~/types/payload/wedding';
-import type { UpdateWdCardDto } from '~/types/payload/wedding';
 
 export const useWeddingApi = () => {
   const api = useApi();
@@ -12,14 +11,14 @@ export const useWeddingApi = () => {
     findAll: () => 
       api.call<any, ApiError>('/wd-card', 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/wd-card/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/wd-card/${payload}`, 'GET'),
 
-    update: (payload: UpdateWdCardDto) => 
-      api.call<any, ApiError>('/wd-card/:id', 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<any, ApiError>(`/wd-card/${payload}`, 'PATCH'),
 
-    remove: () => 
-      api.call<any, ApiError>('/wd-card/:id', 'DELETE'),
+    remove: (payload: string) => 
+      api.call<any, ApiError>(`/wd-card/${payload}`, 'DELETE'),
 
   };
 };

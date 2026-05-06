@@ -3,6 +3,8 @@
     <!-- Hiệu ứng nền -->
     <canvas ref="canvas" class="falling-canvas"></canvas>
     
+   
+
     <!-- Nội dung của trang -->
     <div class="relative z-10">
       <slot />

@@ -1,4 +1,11 @@
-import { Controller, Get, Delete, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { FileManagerService } from './file-manager.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
@@ -13,8 +20,16 @@ export class FileManagerController {
 
   @Get('my-files')
   @ApiOperation({ summary: 'Lấy danh sách tệp của tôi' })
-  async getMyFiles(@CurrentUser() user: any) {
-    return await this.fileManagerService.getUserFiles(user.id);
+  async getMyFiles(
+    @CurrentUser() user: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return await this.fileManagerService.getUserFiles(
+      user.id,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
   }
 
   @Get('stats')

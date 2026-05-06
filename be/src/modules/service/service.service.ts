@@ -19,8 +19,13 @@ export class ServiceService {
     return this.serviceRepository.save(service);
   }
 
-  findAll() {
-    return this.serviceRepository.find();
+  async findAll(page: number = 1, limit: number = 10) {
+    const [data, total] = await this.serviceRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { priority: 'ASC', createdAt: 'DESC' },
+    });
+    return { data, total };
   }
 
   findOne(id: string) {

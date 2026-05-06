@@ -8,11 +8,11 @@ export const useWalletApi = () => {
     findMyTransactions: () => 
       api.call<any, ApiError>('/transaction/my', 'GET'),
 
-    findByAddress: () => 
-      api.call<any, ApiError>('/transaction/address/:address', 'GET'),
+    findByAddress: (payload: string) => 
+      api.call<any, ApiError>(`/transaction/address/${payload}`, 'GET'),
 
-    findOne: () => 
-      api.call<any, ApiError>('/transaction/:id', 'GET'),
+    findOne: (payload: string) => 
+      api.call<any, ApiError>(`/transaction/${payload}`, 'GET'),
 
   };
 };

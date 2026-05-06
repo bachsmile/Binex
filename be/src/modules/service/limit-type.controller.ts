@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { LimitTypeService } from './limit-type.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -33,8 +34,11 @@ export class LimitTypeController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách các loại giới hạn' })
-  findAll() {
-    return this.limitTypeService.findAll();
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.limitTypeService.findAll(
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
   }
 
   @Get(':id')

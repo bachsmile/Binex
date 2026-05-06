@@ -14,11 +14,14 @@ export class FileManagerService {
     private readonly userService: UserService,
   ) {}
 
-  async getUserFiles(userId: string) {
-    return await this.fileAssetRepository.find({
+  async getUserFiles(userId: string, page: number = 1, limit: number = 10) {
+    const [data, total] = await this.fileAssetRepository.findAndCount({
       where: { userId },
+      skip: (page - 1) * limit,
+      take: limit,
       order: { createdAt: 'DESC' },
     });
+    return { data, total };
   }
 
   async getStorageStats(userId: string) {
