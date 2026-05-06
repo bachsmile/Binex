@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CmHeader from '~/components/commons/CmHeader.vue'
+import CiHeader from '~/components/integrations/CiHeader.vue'
 import CmModal from '~/components/commons/CmModal.vue'
 
 definePageMeta({
@@ -24,7 +24,7 @@ onMounted(() => {
 
 <template>
   <div class="zillas-style min-h-screen bg-white">
-    <CmHeader />
+    <CiHeader />
     <!-- 1. Hero Section - Dark & Bold (Full Width) -->
     <section class="relative w-full h-[90vh] flex flex-col justify-center items-center overflow-hidden bg-black px-6">
 
@@ -148,7 +148,7 @@ onMounted(() => {
     <footer class="py-20 bg-black/40 text-white px-6 border-t border-white/5">
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
         <div class="h-16 mix-blend-screen">
-          <img src="/img/logo_binex_final.png" class="h-full w-auto object-contain" />
+          <img src="/img/1778046369521.png" class="h-full w-auto object-contain" />
         </div>
         <div class="flex gap-8 text-xs font-bold uppercase tracking-widest text-white/40">
           <a href="#" class="hover:text-[#CCFF00]">Home</a>

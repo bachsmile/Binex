@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CmHeader from '~/components/commons/CmHeader.vue'
+import CiHeader from '~/components/integrations/CiHeader.vue'
 import CmSkeleton from '~/components/commons/CmSkeleton.vue'
 import { useNewsApi } from '~/api/news'
 
@@ -25,7 +25,7 @@ const relatedNews = [
 
 <template>
   <div class="article-detail min-h-screen bg-black text-white pt-28 pb-32">
-    <CmHeader/>
+    <CiHeader/>
     <div class="max-w-7xl mx-auto px-6">
       <!-- Breadcrumb -->
       <div class="flex items-center gap-4 mb-12 text-[10px] font-black uppercase tracking-widest text-white/30">

@@ -24,13 +24,13 @@ if (import.meta.client) {
     <div class="max-w-8xl mx-auto flex justify-between items-center">
       <!-- Left: Logo -->
       <NuxtLink to="/" class="h-10 md:h-12 mix-blend-screen transition-transform hover:scale-105">
-        <img src="/img/logo_binex_final.png" class="h-full w-auto object-contain" alt="Binex Logo" />
+        <img src="/img/1778046369521.png" class="h-full w-auto object-contain" alt="Binex Logo" />
       </NuxtLink>
       
       <!-- Center: Navigation -->
       <nav class="hidden lg:flex gap-10 text-[11px] font-black uppercase tracking-[0.25em] text-white/50 items-center">
-        <NuxtLink to="/" class="hover:text-[#CCFF00] transition-colors" active-class="text-[#CCFF00]">Hệ sinh thái</NuxtLink>
-        <NuxtLink to="/finance" class="hover:text-[#CCFF00] transition-colors" active-class="text-[#CCFF00]">Giải pháp</NuxtLink>
+        <NuxtLink to="/ecosystem" class="hover:text-[#CCFF00] transition-colors" active-class="text-[#CCFF00]">Hệ sinh thái</NuxtLink>
+        <NuxtLink to="/solutions" class="hover:text-[#CCFF00] transition-colors" active-class="text-[#CCFF00]">Giải pháp</NuxtLink>
         <NuxtLink to="/enterprise" class="hover:text-[#CCFF00] transition-colors" active-class="text-[#CCFF00]">Doanh nghiệp</NuxtLink>
         <NuxtLink to="/news" class="hover:text-[#CCFF00] transition-colors" active-class="text-[#CCFF00]">Tin tức</NuxtLink>
       </nav>

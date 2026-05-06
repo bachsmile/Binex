@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CmHeader from '~/components/commons/CmHeader.vue';
+import CiHeader from '~/components/integrations/CiHeader.vue';
 
 definePageMeta({
   layout: 'falling',
@@ -8,7 +8,7 @@ definePageMeta({
 </script>
 
 <template>
-  <CmHeader />
+  <CiHeader />
   <div class="enterprise-page min-h-screen bg-black text-white">
     <!-- Hero Section -->
     <section class="relative min-h-[70vh] flex items-center justify-center overflow-hidden px-6 pt-20">

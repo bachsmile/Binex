@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CmHeader from '~/components/commons/CmHeader.vue'
+import CiHeader from '~/components/integrations/CiHeader.vue'
 import CmSkeleton from '~/components/commons/CmSkeleton.vue'
 
 import { useNewsApi } from '~/api/news'
@@ -21,13 +21,13 @@ const featuredNews = computed(() => newsList.value[0] || null)
 const secondaryNews = computed(() => newsList.value.slice(1))
 
 const ads = [
-  { id: 1, title: "Quảng cáo Binex Plus", subtitle: "Nhận ưu đãi 50% phí giao dịch", image: "/img/logo_binex_final.png", color: "bg-[#CCFF00]/10" }
+  { id: 1, title: "Quảng cáo Binex Plus", subtitle: "Nhận ưu đãi 50% phí giao dịch", image: "/img/1778046369521.png", color: "bg-[#CCFF00]/10" }
 ]
 </script>
 
 <template>
   <div class="news-page min-h-screen bg-black text-white pt-28 px-6 pb-20">
-    <CmHeader />
+    <CiHeader />
     <div class="max-w-7xl mx-auto">
       <!-- Header Title -->
       <div class="mb-16">

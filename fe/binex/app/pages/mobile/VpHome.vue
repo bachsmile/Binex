@@ -26,7 +26,7 @@ const modules = [
     <!-- Top Header -->
     <header class="p-6 flex justify-between items-center sticky top-0 bg-black/80 backdrop-blur-md z-50 border-b border-white/5">
       <div class="h-8">
-        <img src="/img/logo_binex_final.png" class="h-full w-auto object-contain mix-blend-screen" />
+        <img src="/img/1778046369521.png" class="h-full w-auto object-contain mix-blend-screen" />
       </div>
       <div class="flex gap-4 items-center">
         <button class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
