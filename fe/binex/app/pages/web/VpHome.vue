@@ -1,6 +1,34 @@
 <script setup lang="ts">
 import CiHeader from '~/components/integrations/CiHeader.vue'
 import CmModal from '~/components/commons/CmModal.vue'
+import CmCard from '~/components/commons/CmCard.vue'
+
+const { public: { apiBaseUrl } } = useRuntimeConfig()
+const { data: serviceResponse } = await useFetch<{ data: any[], total: number }>(`${apiBaseUrl}/service`, {
+  params: { limit: 100 }
+})
+
+const getMascot = (name: string) => {
+  const n = name.toLowerCase()
+  if (n.includes('wedding')) return '/img/mascot_wedding.png'
+  if (n.includes('finance') || n.includes('tài chính')) return '/img/mascot_finance.png'
+  if (n.includes('law') || n.includes('luật')) return '/img/mascot_law.png'
+  if (n.includes('education') || n.includes('giáo dục')) return '/img/mascot_education.png'
+  if (n.includes('medical') || n.includes('y tế')) return '/img/mascot_medical.png'
+  if (n.includes('business') || n.includes('doanh nghiệp')) return '/img/mascot_business.png'
+  return '/img/mascot_empty_nobg.png'
+}
+
+const getModulePath = (name: string) => {
+  const n = name.toLowerCase()
+  if (n.includes('wedding')) return '/web/modules/wedding'
+  if (n.includes('finance')) return '/web/modules/finance'
+  if (n.includes('law')) return '/web/modules/law'
+  if (n.includes('education')) return '/web/modules/education'
+  if (n.includes('medical')) return '/web/modules/medical'
+  if (n.includes('business')) return '/web/modules/business'
+  return '/'
+}
 
 definePageMeta({
   layout: 'falling',
@@ -69,45 +97,31 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- 3. Dark Section - Module Showcase -->
-    <section class="relative py-40 px-6 bg-[#000000] overflow-hidden">
-      <!-- Torn edge top -->
-      <!-- <div class="absolute top-0 left-0 w-full h-20 bg-white" style="clip-path: polygon(0 0, 100% 0, 100% 100%, 80% 30%, 65% 90%, 50% 20%, 35% 80%, 20% 40%, 0 100%);"></div> -->
-
-      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-        <div>
-          <h2 class="text-5xl md:text-7xl font-black text-[#CCFF00] leading-tight mb-8">
-            Integrated <br/>
-            Digital <br/>
-            Solutions.
-          </h2>
-          <p class="text-lg text-white/40 leading-relaxed mb-12">
-            Khám phá các module chuyên biệt từ Quản lý tiệc cưới (Wedding) đến Trung tâm tài chính (Finance). Mỗi giải pháp được thiết kế để mang lại hiệu quả tối đa cho người dùng.
-          </p>
-          <div class="flex flex-col gap-6">
-            <NuxtLink to="/modules/wedding/VpWeddHome" class="group flex items-center gap-4 text-white hover:text-[#CCFF00] transition-colors">
-              <span class="w-12 h-1 bg-[#CCFF00]"></span>
-              <span class="text-xl font-bold uppercase tracking-widest">Wedding Module</span>
-            </NuxtLink>
-            <NuxtLink to="/finance" class="group flex items-center gap-4 text-white hover:text-[#CCFF00] transition-colors opacity-50">
-              <span class="w-12 h-px bg-white/20 group-hover:bg-[#CCFF00] group-hover:h-1 transition-all"></span>
-              <span class="text-xl font-bold uppercase tracking-widest">Finance Hub</span>
-            </NuxtLink>
+    <!-- 3. Module Showcase Section (Dynamic) -->
+    <section class="py-32 px-6 md:px-12 bg-black relative overflow-hidden">
+      <div class="max-w-8xl mx-auto relative z-10">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-12">
+          <div class="max-w-2xl">
+            <div class="text-[#CCFF00] uppercase tracking-[0.5em] font-black text-[10px] mb-6">Binex Modules</div>
+            <h2 class="text-5xl md:text-7xl font-black uppercase !leading-[0.9] text-white">Dịch vụ <br/> <span class="text-white/10">Toàn diện</span></h2>
           </div>
+          <p class="text-white/40 max-w-md text-sm leading-relaxed font-medium uppercase tracking-widest">
+            Mỗi module được thiết kế chuyên biệt để giải quyết các bài toán đặc thù trong từng lĩnh vực, mang lại hiệu quả tối ưu nhất.
+          </p>
         </div>
 
-        <!-- Showcase Image/Mockup -->
-        <div class="relative group">
-          <div class="absolute -inset-4 bg-[#CCFF00]/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div class="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-            <img src="/img/hero.png" class="w-full h-auto object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+        <div v-if="serviceResponse?.data?.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div v-for="service in serviceResponse.data" :key="service.id" class="h-full">
+            <CmCard 
+              :title="service.name"
+              :description="service.description"
+              :image="getMascot(service.name)"
+              :to="{ path: getModulePath(service.name), query: { id: service.id } }"
+            />
           </div>
-          <!-- Trophy/Floating Badge like in image -->
-          <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-black border border-[#CCFF00]/30 rounded-2xl p-6 flex flex-col justify-center items-center shadow-2xl animate-bounce-slow">
-            <Icon name="ph:trophy-bold" class="text-5xl text-[#CCFF00] mb-2" />
-            <div class="text-[10px] text-[#CCFF00] font-black tracking-widest uppercase">Award Winner</div>
-          </div>
+        </div>
+        <div v-else class="flex justify-center py-20 opacity-20">
+          <p class="uppercase tracking-[0.5em] font-black text-xs text-white">Đang tải dữ liệu module...</p>
         </div>
       </div>
     </section>

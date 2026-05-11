@@ -101,7 +101,7 @@ definePageMeta({
           ></iframe>
           
           <!-- Contact Overlay - Positioned better -->
-          <div class="absolute top-10 left-10 p-10 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] max-w-sm shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-700">
+          <div class="absolute top-10 left-10 p-10 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] max-w-sm shadow-2xl opacity-100 transition-all duration-700">
             <h4 class="text-white font-black uppercase tracking-[0.2em] mb-8 text-xs text-[#CCFF00]">Kết nối ngay</h4>
             <div class="space-y-8">
               <div class="flex items-center gap-6">
@@ -110,7 +110,7 @@ definePageMeta({
                 </div>
                 <div>
                   <div class="text-[9px] text-white/30 uppercase font-black tracking-widest mb-1">Hotline</div>
-                  <div class="text-base font-bold text-white tracking-tight">1900 8888</div>
+                  <div class="text-base font-bold text-white tracking-tight">0777 444 933</div>
                 </div>
               </div>
               <div class="flex items-center gap-6">
@@ -119,7 +119,16 @@ definePageMeta({
                 </div>
                 <div>
                   <div class="text-[9px] text-white/30 uppercase font-black tracking-widest mb-1">Email</div>
-                  <div class="text-base font-bold text-white tracking-tight">contact@binex.vn</div>
+                  <div class="text-base font-bold text-white tracking-tight underline decoration-[#CCFF00]/30">binexvn@gmail.com</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-6">
+                <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
+                  <Icon name="ph:facebook-logo-fill" class="text-[#CCFF00] text-xl" />
+                </div>
+                <div>
+                  <div class="text-[9px] text-white/30 uppercase font-black tracking-widest mb-1">Cộng đồng</div>
+                  <a href="https://www.facebook.com/groups/binex.vn" target="_blank" class="text-base font-bold text-white tracking-tight hover:text-[#CCFF00] transition-colors underline decoration-[#CCFF00]/30">Binex Group</a>
                 </div>
               </div>
             </div>

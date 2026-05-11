@@ -48,6 +48,18 @@ export class WalletController {
   }
 
   @Roles(Role.SUPER_ADMIN)
+  @Get('admin/all')
+  findAllAdmin(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.walletService.findAll(
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+  }
+
+  @Roles(Role.SUPER_ADMIN)
   @Post('deposit')
   deposit(@CurrentUser() user: any, @Body() depositDto: DepositDto) {
     return this.walletService.deposit(

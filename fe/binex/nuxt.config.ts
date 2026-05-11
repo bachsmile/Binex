@@ -32,26 +32,26 @@ export default defineNuxtConfig({
   ],
   pwa: {
     manifest: {
-      name: 'Binex Ecosystem Center',
-      short_name: 'Binex+',
-      description: 'Unified Content & Smart Management Ecosystem',
-      theme_color: '#000000',
-      background_color: '#000000',
+      name: "Binex Ecosystem Center",
+      short_name: "Binex+",
+      description: "Unified Content & Smart Management Ecosystem",
+      theme_color: "#000000",
+      background_color: "#000000",
       icons: [
         {
-          src: '/icon.png',
-          sizes: '512x512',
-          type: 'image/png'
-        }
-      ]
+          src: "/icon.png",
+          sizes: "512x512",
+          type: "image/png",
+        },
+      ],
     },
     workbox: {
-      navigateFallback: '/'
+      navigateFallback: "/",
     },
     devOptions: {
       enabled: false,
-      type: 'module'
-    }
+      type: "module",
+    },
   },
   colorMode: {
     classSuffix: "-mode",
@@ -61,11 +61,7 @@ export default defineNuxtConfig({
   },
   vite: {
     optimizeDeps: {
-      include: [
-        "@vue/devtools-core",
-        "@vue/devtools-kit",
-        "workbox-window"
-      ],
+      include: ["@vue/devtools-core", "@vue/devtools-kit", "workbox-window"],
     },
   },
 });

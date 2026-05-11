@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthApi } from '~/api/auth';
-import type { LoginDto } from '~/types/payload/auth';
+import type { LoginDto } from '~/types/payload/login';
 
 definePageMeta({
   layout: false,
@@ -60,16 +60,21 @@ const handleLogin = async () => {
     };
     
     const response = await authApi.login(payload);
+    const loginData = response?.data;
     
     // Store token in cookie
     const token = useCookie('auth_token', {
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: '/'
     });
-    token.value = response.accessToken;
     
-    // Success redirect
-    useRouter().push('/');
+    if (loginData?.accessToken) {
+      token.value = loginData.accessToken;
+      // Success redirect
+      useRouter().push('/');
+    } else {
+      loginError.value = response?.message || 'Đăng nhập thất bại';
+    }
   } catch (err: any) {
     loginError.value = err?.data?.message || 'Đăng nhập thất bại';
     console.error('Login error:', err);

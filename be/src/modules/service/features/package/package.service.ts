@@ -3,13 +3,16 @@ import { CreatePackageDto } from '../../dto/package/create-package.dto';
 import { UpdatePackageDto } from '../../dto/package/update-package.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Package } from '../../entities/package.entity';
-import { Repository } from 'typeorm';
+import { Service } from '../../entities/service.entity';
+import { In, Repository } from 'typeorm';
 
 @Injectable()
 export class PackageService {
   constructor(
     @InjectRepository(Package)
     private readonly packageRepository: Repository<Package>,
+    @InjectRepository(Service)
+    private readonly serviceRepository: Repository<Service>,
   ) {}
   async create(createPackageDto: CreatePackageDto) {
     const existingPackage = await this.packageRepository.findOne({
@@ -25,7 +28,35 @@ export class PackageService {
     pack.updatedAt = new Date();
     pack.amountGroup = createPackageDto.isGroup ? 5 : 1;
 
-    return this.packageRepository.save(pack);
+    const savedPackage = await this.packageRepository.save(pack);
+
+    // Automatically link to service if serviceId is provided
+    if (createPackageDto.serviceId) {
+      console.log(`[PackageService] Linking package ${savedPackage.id} to service ${createPackageDto.serviceId}`);
+      
+      const service = await this.serviceRepository.findOne({
+        where: { id: createPackageDto.serviceId },
+      });
+
+      if (service) {
+        const packageIds = service.packageIds || [];
+        if (!packageIds.includes(savedPackage.id)) {
+          packageIds.push(savedPackage.id);
+          // Force a new array reference for TypeORM to detect changes
+          service.packageIds = [...packageIds];
+          service.updatedAt = new Date();
+          
+          const updatedService = await this.serviceRepository.save(service);
+          console.log(`[PackageService] Successfully updated service ${service.id}. New packageIds:`, updatedService.packageIds);
+        } else {
+          console.log(`[PackageService] Package ID already exists in service ${service.id}`);
+        }
+      } else {
+        console.warn(`[PackageService] Service with ID ${createPackageDto.serviceId} not found!`);
+      }
+    }
+
+    return savedPackage;
   }
 
   findAll() {
@@ -34,6 +65,11 @@ export class PackageService {
 
   findOne(id: string) {
     return this.packageRepository.findOne({ where: { id } });
+  }
+
+  findByIds(ids: string[]) {
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+    return this.packageRepository.find({ where: { id: In(ids) } });
   }
 
   async update(id: string, updatePackageDto: UpdatePackageDto) {
@@ -66,12 +102,12 @@ export class PackageService {
     if (!pack) {
       throw new Error('Package not found');
     }
-    
+
     const recordLimit = pack.recordLimit || {};
     recordLimit[key] = value;
     pack.recordLimit = recordLimit;
     pack.updatedAt = new Date();
-    
+
     return this.packageRepository.save(pack);
   }
 }

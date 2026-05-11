@@ -1,36 +1,30 @@
 import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
 import { MailService } from './mail.service';
-import { ApiOperation, ApiTags, ApiProperty } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiProperty,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { activationTemplate } from './templates/activation.template';
-
-class SendTestMailDto {
-  @ApiProperty({
-    example: 'user@example.com',
-    description: 'Địa chỉ email người nhận',
-  })
-  mailto: string;
-
-  @ApiProperty({
-    example: 'Gói Cơ Bản',
-    description: 'Tên gói dịch vụ (tùy chọn)',
-    required: false,
-  })
-  packageName?: string;
-
-  @ApiProperty({
-    example: 'TEST-KEY-123',
-    description: 'Mã kích hoạt (tùy chọn)',
-    required: false,
-  })
-  key?: string;
-}
+import { SubscribeMailDto } from './dto/subscribe-mail.dto';
+import { SendTestMailDto } from './dto/send-test-mail.dto';
+import { MailSubscription } from './entities/mail-subscription.entity';
 
 @ApiTags('Mail')
 @Controller('mail')
 export class MailController {
   constructor(private readonly mailService: MailService) {}
 
+  @Post('subscribe')
+  @ApiOperation({ summary: 'Đăng ký nhận tin từ hệ thống' })
+  @ApiResponse({ status: 201, type: MailSubscription })
+  async subscribe(@Body() body: SubscribeMailDto) {
+    return await this.mailService.subscribe(body.email);
+  }
+
   @Post('test')
+  // ... (rest of controller)
   @ApiOperation({ summary: 'Gửi email thử nghiệm sử dụng template kích hoạt' })
   async sendTestMail(@Body() body: SendTestMailDto) {
     const { mailto, key } = body;

@@ -6,16 +6,15 @@ export interface PlatformFee {
   id: string;
 
 
+  code: string; // Mã định danh (ví dụ;
 
-  name: string; // Tên hiển thị
+  name: string; // Tên hiển thị;
 
   description: string;
 
-  type: 'enum',
-  enum: FeeType,
-  default: FeeType.PERCENTAGE,
   type: FeeType;
 
+  value: number; // Giá trị (ví dụ;
 
   isActive: boolean;
 

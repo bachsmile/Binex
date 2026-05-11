@@ -23,6 +23,11 @@ export class CreateServiceDto {
   @IsNotEmpty()
   priority: number;
 
+  @ApiProperty({ example: 'ph:briefcase-duotone', required: false })
+  @IsString()
+  @IsOptional()
+  icon?: string;
+
   @ApiProperty({ example: '2026-04-29T00:00:00Z', required: false })
   @IsString()
   @IsOptional()
@@ -33,9 +38,11 @@ export class CreateServiceDto {
   @IsOptional()
   updatedAt?: string;
 
-  @ApiProperty({ type: [String], required: false })
-  @IsArray()
-  @IsString({ each: true })
   @IsOptional()
   packageIds?: string[];
+
+  @ApiProperty({ example: 'https://example.com/thumbnail.png', required: false })
+  @IsString()
+  @IsOptional()
+  thumbnail?: string;
 }

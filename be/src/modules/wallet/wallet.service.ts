@@ -3,6 +3,7 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wallet } from './entities/wallet.entity';
+import { User } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { WORD_LIST } from './constants/wordlist';
 import * as crypto from 'crypto';
@@ -20,57 +21,81 @@ export class WalletService {
   ) {}
 
   async create(createWalletDto: CreateWalletDto, userId: string) {
-    // 0. Kiểm tra xem người dùng đã có ví chưa
-    const userWallet = await this.walletRepository.findOne({
-      where: { userId },
-    });
-
-    if (userWallet) {
-      throw new BadRequestException('Mỗi người dùng chỉ được phép sở hữu 1 ví');
-    }
-
-    // 1. Kiểm tra xem Private Key hoặc Public Key đã tồn tại chưa
-    const existingWallet = await this.walletRepository.findOne({
-      where: [
-        { privateKey: createWalletDto.privateKey },
-        { publicKey: createWalletDto.publicKey },
-      ],
-    });
-
-    if (existingWallet) {
-      throw new BadRequestException('Ví này đã tồn tại trong hệ thống');
-    }
-
-    const generateHash = (suffix: string) => {
-      const prefix = '0xB';
-      const randomLen = 52 - prefix.length - suffix.length;
-      const randomPart = crypto
-        .randomBytes(Math.ceil(randomLen / 2))
-        .toString('hex')
-        .slice(0, randomLen);
-      return prefix + randomPart + suffix;
-    };
-
-    // 2. Đảm bảo address tạo ra là duy nhất
-    let address = '';
-    let isAddressUnique = false;
-    while (!isAddressUnique) {
-      address = generateHash('evn');
-      const checkAddress = await this.walletRepository.findOne({
-        where: { address },
+    return await this.walletRepository.manager.transaction(async (manager) => {
+      // 0. Kiểm tra xem người dùng đã có ví chưa
+      const userWallet = await manager.findOne(Wallet, {
+        where: { userId },
       });
-      if (!checkAddress) isAddressUnique = true;
-    }
 
-    const wallet = this.walletRepository.create({
-      ...createWalletDto,
-      userId,
-      address,
-      createdBy: userId,
-      updatedBy: userId,
+      let savedWallet: Wallet;
+
+      if (userWallet) {
+        // Nếu đã có ví, dùng ví đó để đồng bộ lại (phòng trường hợp User table bị null)
+        savedWallet = userWallet;
+        console.log(
+          `[Wallet] User ${userId} already has wallet ${savedWallet.id}. Syncing...`,
+        );
+      } else {
+        // 1. Kiểm tra xem Private Key hoặc Public Key đã tồn tại chưa
+        const existingWallet = await manager.findOne(Wallet, {
+          where: [
+            { privateKey: createWalletDto.privateKey },
+            { publicKey: createWalletDto.publicKey },
+          ],
+        });
+
+        if (existingWallet) {
+          throw new BadRequestException('Ví này đã tồn tại trong hệ thống');
+        }
+
+        const generateHash = (suffix: string) => {
+          const prefix = '0xB';
+          const randomLen = 52 - prefix.length - suffix.length;
+          const randomPart = crypto
+            .randomBytes(Math.ceil(randomLen / 2))
+            .toString('hex')
+            .slice(0, randomLen);
+          return prefix + randomPart + suffix;
+        };
+
+        // 2. Đảm bảo address tạo ra là duy nhất
+        let address = '';
+        let isAddressUnique = false;
+        while (!isAddressUnique) {
+          address = generateHash('evn');
+          const checkAddress = await manager.findOne(Wallet, {
+            where: { address },
+          });
+          if (!checkAddress) isAddressUnique = true;
+        }
+
+        // 3. Tạo ví mới
+        const wallet = manager.create(Wallet, {
+          ...createWalletDto,
+          userId,
+          address,
+          createdBy: userId,
+          updatedBy: userId,
+        });
+
+        savedWallet = await manager.save(wallet);
+      }
+
+      // 4. CẬP NHẬT BẢNG USER (Sử dụng update trực tiếp để đảm bảo lưu mảng lên PostgreSQL)
+      const user = await manager.findOne(User, { where: { id: userId } });
+      if (user) {
+        const walletIds = user.walletIds || [];
+        if (!walletIds.includes(savedWallet.id)) {
+          const updatedWalletIds = [...walletIds, savedWallet.id];
+          await manager.update(User, userId, { walletIds: updatedWalletIds });
+          console.log(
+            `[Wallet] Updated user ${userId} with wallet ${savedWallet.id}`,
+          );
+        }
+      }
+
+      return savedWallet;
     });
-
-    return this.walletRepository.save(wallet);
   }
 
   async createKey() {

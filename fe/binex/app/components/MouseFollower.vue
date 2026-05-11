@@ -133,6 +133,6 @@ watch(showMouseFollower, (val) => {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 9999; /* Luôn nằm trên cùng */
+  z-index: 5000; /* Hạ xuống dưới Modals */
 }
 </style>

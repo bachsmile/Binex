@@ -1,30 +1,32 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
-import type { CreatePackageDto } from '~/types/payload/service';
+import type { ApiResponse, ApiListResponse } from '~/types/api-response';
+import type { CreateServiceDto } from '~/types/payload/create-service';
+import type { Service } from '~/types/response/service';
 
 export const useServiceApi = () => {
   const api = useApi();
   return {
-    updateRecordLimit: () => 
-      api.call<any, ApiError>(`/package/${payload}/record-limit`, 'PATCH'),
+    create: (payload: CreateServiceDto) => 
+      api.call<ApiResponse<Service>, ApiError>('/service', 'POST', payload),
 
-    create: (payload: CreatePackageDto) => 
-      api.call<any, ApiError>('/package', 'POST', payload),
-
-    findAll: () => 
-      api.call<any, ApiError>('/package', 'GET'),
+    findAll: (params?: any) => 
+      api.call<ApiListResponse<Service>, ApiError>('/service', 'GET', params),
 
     findOne: (payload: string) => 
-      api.call<any, ApiError>(`/package/${payload}`, 'GET'),
+      api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'GET'),
 
-    update: (payload: string) => 
-      api.call<any, ApiError>(`/package/${payload}`, 'PATCH'),
+    findByUserId: (payload: string) => 
+      api.call<ApiResponse<string>, ApiError>(`/service/user/${payload}`, 'GET'),
+
+    update: (id: string, payload: any) => 
+      api.call<ApiResponse<Service>, ApiError>(`/service/${id}`, 'PATCH', payload),
 
     remove: (payload: string) => 
-      api.call<any, ApiError>(`/package/${payload}`, 'DELETE'),
+      api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'DELETE'),
 
-    removeAll: () => 
-      api.call<any, ApiError>('/package', 'DELETE'),
+    findWithPriority: (payload: string) => 
+      api.call<ApiResponse<Service[]>, ApiError>(`/service/priority/${payload}`, 'GET'),
 
   };
 };

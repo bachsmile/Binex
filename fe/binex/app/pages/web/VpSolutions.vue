@@ -114,10 +114,10 @@ const benefits = [
                 
                 <!-- Orbital Nodes -->
                 <div v-for="i in 4" :key="i" :class="['absolute w-16 h-16 md:w-20 md:h-20 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl flex items-center justify-center transition-all animate-float z-30', `node-${i}`]">
-                  <Icon :name="['ph:bank-bold', 'ph:shopping-cart-bold', 'ph:file-xls-bold', 'ph:users-four-bold'][i-1]" class="text-xl md:text-2xl text-[#CCFF00]" />
+                  <Icon :name="(['ph:bank-bold', 'ph:shopping-cart-bold', 'ph:file-xls-bold', 'ph:users-four-bold'][i-1]) ?? ''" class="text-xl md:text-2xl text-[#CCFF00]" />
                   <!-- Label for nodes -->
                   <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black uppercase tracking-widest text-white/30">
-                    {{ ['Bank', 'POS', 'Excel', 'Users'][i-1] }}
+                    {{ (['Bank', 'POS', 'Excel', 'Users'][i-1]) ?? '' }}
                   </div>
                 </div>
 

@@ -1,5 +1,5 @@
 /** Auto-generated response */
-import type { TransactionType, TransactionStatus } from '../enums/wallet';
+
 
 export interface Wallet {
 
@@ -35,37 +35,6 @@ export interface Wallet {
   privateKey: string;
 
   publicKey: string;
-
-}
-
-export interface Transaction {
-
-  id: string;
-
-
-  fromAddress: string;
-
-  toAddress: string;
-
-  amount: number;
-
-  currency: string;
-
-  type: 'enum',
-  enum: TransactionType,
-  type: TransactionType;
-
-  type: 'enum',
-  enum: TransactionStatus,
-  default: TransactionStatus.SUCCESS,
-  status: TransactionStatus;
-
-  description: string;
-
-
-  createdAt: Date;
-
-  updatedAt: Date;
 
 }
 

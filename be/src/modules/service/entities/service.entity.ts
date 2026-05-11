@@ -30,4 +30,10 @@ export class Service {
 
   @Column()
   priority: number;
+
+  @Column({ nullable: true })
+  icon: string;
+
+  @Column({ nullable: true })
+  thumbnail: string;
 }

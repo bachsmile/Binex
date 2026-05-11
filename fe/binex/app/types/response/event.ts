@@ -17,9 +17,6 @@ export interface Event {
 
   endDate: Date;
 
-  type: 'enum',
-  enum: EventStatus,
-  default: EventStatus.UPCOMING,
   status: EventStatus;
 
   image: string;

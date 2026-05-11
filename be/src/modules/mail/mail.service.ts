@@ -5,13 +5,20 @@ import * as nodemailer from 'nodemailer';
 import { activationTemplate } from './templates/activation.template';
 import { accountActivatedTemplate } from './templates/account-activated.template';
 import { permissionExtendedTemplate } from './templates/permission-extended.template';
+import { InjectRepository } from '@nestjs/typeorm';
+import { MailSubscription } from './entities/mail-subscription.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @InjectRepository(MailSubscription)
+    private mailSubscriptionRepository: Repository<MailSubscription>,
+  ) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
       port: this.configService.get<number>('SMTP_PORT'),
@@ -107,5 +114,21 @@ export class MailService {
         `Failed to send extension email to ${email}: ${error.message}`,
       );
     }
+  }
+
+  async subscribe(email: string) {
+    const existing = await this.mailSubscriptionRepository.findOne({
+      where: { email },
+    });
+    if (existing) {
+      if (!existing.isActive) {
+        existing.isActive = true;
+        return await this.mailSubscriptionRepository.save(existing);
+      }
+      return existing;
+    }
+
+    const subscription = this.mailSubscriptionRepository.create({ email });
+    return await this.mailSubscriptionRepository.save(subscription);
   }
 }

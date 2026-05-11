@@ -1,24 +1,25 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
-import type { CreateCryptoDto } from '~/types/payload/finance';
+import type { ApiResponse, ApiListResponse } from '~/types/api-response';
+import type { CreateFinanceDto } from '~/types/payload/create-finance';
 
 export const useFinanceApi = () => {
   const api = useApi();
   return {
-    create: (payload: CreateCryptoDto) => 
-      api.call<any, ApiError>('/finance/crypto', 'POST', payload),
+    create: (payload: CreateFinanceDto) => 
+      api.call<ApiResponse<any>, ApiError>('/finance', 'POST', payload),
 
     findAll: () => 
-      api.call<any, ApiError>('/finance/crypto', 'GET'),
+      api.call<ApiResponse<any>, ApiError>('/finance', 'GET'),
 
     findOne: (payload: string) => 
-      api.call<any, ApiError>(`/finance/crypto/${payload}`, 'GET'),
+      api.call<ApiResponse<any>, ApiError>(`/finance/${payload}`, 'GET'),
 
     update: (payload: string) => 
-      api.call<any, ApiError>(`/finance/crypto/${payload}`, 'PATCH'),
+      api.call<ApiResponse<any>, ApiError>(`/finance/${payload}`, 'PATCH'),
 
     remove: (payload: string) => 
-      api.call<any, ApiError>(`/finance/crypto/${payload}`, 'DELETE'),
+      api.call<ApiResponse<any>, ApiError>(`/finance/${payload}`, 'DELETE'),
 
   };
 };

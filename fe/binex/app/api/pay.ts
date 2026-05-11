@@ -1,24 +1,32 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
-import type { CreateMethodPayDto } from '~/types/payload/pay';
+import type { ApiResponse, ApiListResponse } from '~/types/api-response';
+import type { CryptoPayDto } from '~/types/payload/crypto-pay';
+import type { ManualPayDto } from '~/types/payload/manual-pay';
 
 export const usePayApi = () => {
   const api = useApi();
   return {
-    create: (payload: CreateMethodPayDto) => 
-      api.call<any, ApiError>('/method-pay', 'POST', payload),
+    payWithCrypto: (payload: CryptoPayDto) => 
+      api.call<ApiResponse<any>, ApiError>('/pay/crypto', 'POST', payload),
 
-    findAll: () => 
-      api.call<any, ApiError>('/method-pay', 'GET'),
+    getBalance: () => 
+      api.call<ApiResponse<any>, ApiError>('/pay/balance', 'GET'),
 
-    findOne: (payload: string) => 
-      api.call<any, ApiError>(`/method-pay/${payload}`, 'GET'),
+    getAdminWallet: () => 
+      api.call<ApiResponse<any>, ApiError>('/pay/admin-wallet', 'GET'),
 
-    update: () => 
-      api.call<any, ApiError>(`/method-pay/${payload}`, 'PATCH'),
+    verifyPayment: () => 
+      api.call<ApiResponse<any>, ApiError>('/pay/verify-payment', 'POST'),
 
-    remove: (payload: string) => 
-      api.call<any, ApiError>(`/method-pay/${payload}`, 'DELETE'),
+    submitManualPayment: (payload: ManualPayDto) => 
+      api.call<ApiResponse<any>, ApiError>('/pay/manual', 'POST', payload),
+
+    verifyManualPayment: () => 
+      api.call<ApiResponse<any>, ApiError>('/pay/manual/verify', 'PATCH'),
+
+    getPaymentRequests: () => 
+      api.call<ApiResponse<any>, ApiError>('/pay/manual/requests', 'GET'),
 
   };
 };

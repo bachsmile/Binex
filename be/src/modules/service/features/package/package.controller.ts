@@ -17,6 +17,7 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { Role } from 'src/modules/auth/enums/role.enum';
 import { UpdatePackageRecordLimitDto } from '../../dto/package/update-record-limit.dto';
+import { GetPackagesByIdsDto } from '../../dto/package/get-packages-by-ids.dto';
 
 @ApiTags('package')
 @ApiBearerAuth('JWT-auth')
@@ -45,6 +46,11 @@ export class PackageController {
   @Get()
   findAll() {
     return this.packageService.findAll();
+  }
+
+  @Post('details')
+  findDetailsByIds(@Body() payload: GetPackagesByIdsDto) {
+    return this.packageService.findByIds(payload.ids);
   }
 
   @Get(':id')

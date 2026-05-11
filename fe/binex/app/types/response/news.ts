@@ -1,5 +1,5 @@
 /** Auto-generated response */
-import type { NewsCategory } from '../enums/news';
+import type { NewsCategory } from '../enums/news-category';
 
 export interface News {
 
@@ -11,9 +11,6 @@ export interface News {
 
   content: string;
 
-  type: 'enum',
-  enum: NewsCategory,
-  default: NewsCategory.EVENT,
   category: NewsCategory;
 
   image: string;

@@ -3,6 +3,8 @@ import CiHeader from '~/components/integrations/CiHeader.vue'
 import CmSkeleton from '~/components/commons/CmSkeleton.vue'
 
 import { useNewsApi } from '~/api/news'
+import { useMailApi } from '~/api/mail'
+import { ref } from 'vue'
 
 definePageMeta({
   layout: 'falling',
@@ -23,6 +25,27 @@ const secondaryNews = computed(() => newsList.value.slice(1))
 const ads = [
   { id: 1, title: "Quảng cáo Binex Plus", subtitle: "Nhận ưu đãi 50% phí giao dịch", image: "/img/1778046369521.png", color: "bg-[#CCFF00]/10" }
 ]
+
+const mailApi = useMailApi()
+const subscribeEmail = ref('')
+const isSubscribing = ref(false)
+
+const handleSubscribe = async () => {
+  if (!subscribeEmail.value) return
+  isSubscribing.value = true
+  try {
+    const res = await mailApi.subscribe({ email: subscribeEmail.value })
+    if (res?.data) {
+      alert('Đăng ký nhận tin thành công!')
+      subscribeEmail.value = ''
+    }
+  } catch (error) {
+    console.error('Subscribe error:', error)
+    alert('Đã có lỗi xảy ra, vui lòng thử lại sau.')
+  } finally {
+    isSubscribing.value = false
+  }
+}
 </script>
 
 <template>
@@ -109,9 +132,18 @@ const ads = [
           <div class="p-10 rounded-[2.5rem] bg-white/5 border border-white/10">
             <h4 class="text-lg font-bold mb-6">Đăng ký nhận tin</h4>
             <div class="space-y-4">
-              <input type="email" placeholder="Email của bạn..." class="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-3 text-sm focus:border-[#CCFF00] outline-none transition-all" />
-              <button class="w-full py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/20 transition-colors">
-                Gửi ngay
+              <input 
+                v-model="subscribeEmail"
+                type="email" 
+                placeholder="Email của bạn..." 
+                class="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-3 text-sm focus:border-[#CCFF00] outline-none transition-all" 
+              />
+              <button 
+                @click="handleSubscribe"
+                :disabled="isSubscribing"
+                class="w-full py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ isSubscribing ? 'Đang gửi...' : 'Gửi ngay' }}
               </button>
             </div>
           </div>

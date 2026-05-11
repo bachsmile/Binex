@@ -1,27 +1,44 @@
 /** Auto-generated response */
 import type { User } from './user';
-import type { Role } from '../enums/auth';
 
 export interface LoginResponse {
 
+  /**
+   * JWT Access Token
+   */
   accessToken: string;
 
+  /**
+   * Thông tin người dùng
+   */
   user: User;
 
+  /**
+   * Thời gian hết hạn (giây)
+   */
   expiresIn: number;
 
 }
 
 export interface RegisterResponse {
 
+  /**
+   * Thông báo kết quả
+   */
   message: string;
 
+  /**
+   * Thông tin người dùng vừa tạo
+   */
   user: User;
 
 }
 
 export interface LogoutResponse {
 
+  /**
+   * example: true
+   */
   success: boolean;
 
 }
@@ -39,34 +56,6 @@ export interface RedeemKeyResponse {
 }
 
 export interface Auth {
-
-}
-
-export interface ActivationKey {
-
-  id: string;
-
-
-  key: string;
-
-  type: 'enum',
-  enum: Role,
-  nullable: true,
-  role?: Role;
-
-  days?: number;
-
-  packageId: string;
-
-  serviceId: string;
-
-  isUsed: boolean;
-
-  usedBy: string;
-
-  expiresAt: Date;
-
-  createdAt: Date;
 
 }
 

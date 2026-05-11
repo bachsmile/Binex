@@ -1,7 +1,10 @@
 /** Auto-generated response */
-import type { Wedding, WdWeb, WdCard } from './wedding';
+import type { Wedding } from './wedding';
+import type { WdWeb } from './wd-web';
+import type { WdCard } from './wd-card';
 import type { UserStatus } from '../enums/user';
-import type { Role } from '../enums/auth';
+import type { UserPermission } from './user-permission';
+import type { Role } from '../enums/role';
 
 export interface User {
 
@@ -40,19 +43,15 @@ export interface User {
 
   country: string;
 
-  type: 'enum',
-  enum: Role,
-  default: Role.USER,
   role: Role;
 
-  type: 'enum',
-  enum: UserStatus,
-  default: UserStatus.ACTIVE,
   status: UserStatus;
 
+  usedStorage: number; // Tổng dung lượng đã dùng (MB);
 
+  storageLimit: number; // Giới hạn dung lượng riêng (MB), 0 là dùng theo gói;
 
-  recordLimit: any; // Giới hạn bản ghi riêng { "key"
+  recordLimit: any; // Giới hạn bản ghi riêng { "key";
 
   isDeleted: boolean;
 
@@ -78,33 +77,6 @@ export interface User {
   wdCards: WdCard[];
 
   userPermissions: UserPermission[];
-
-}
-
-export interface UserPermission {
-
-  id: string;
-
-
-  serId: string;
-
-  serName: string;
-
-  packId: string;
-
-  packName: string;
-
-  ac: number;
-
-  userId: string;
-
-  expiredAt: Date;
-
-  user: User;
-
-  createdAt: Date;
-
-  updatedAt: Date;
 
 }
 

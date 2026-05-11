@@ -1,7 +1,18 @@
 /** Auto-generated response */
 
 
-export interface Package {
+export interface ServiceListResponse {
+
+  data: Service[];
+
+  /**
+   * example: 0
+   */
+  total: number;
+
+}
+
+export interface Service {
 
   id: string;
 
@@ -10,39 +21,16 @@ export interface Package {
 
   description: string;
 
-  price: string;
-
-  isGroup: boolean;
-
-  amountGroup: number;
-
-  sale?: number;
-
-  expire: number;
-
-
-  recordLimit: any; // Giới hạn bản ghi theo từng loại { "key"
+  packageIds: string[];
 
   createdAt: Date;
 
   updatedAt: Date;
 
-  serviceId: string;
+  priority: number;
 
-  ser: number;
+  icon: string;
 
-}
-
-export interface LimitType {
-
-  id: number;
-
-
-
-  description: string;
-
-
-  createdAt: Date;
+  thumbnail: string;
 
 }
-
