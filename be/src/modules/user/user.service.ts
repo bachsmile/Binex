@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, Raw, ILike, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UserPermission } from './entities/user-permission.entity';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
@@ -23,6 +23,7 @@ export class UserService {
     private serviceRepository: Repository<Service>,
     @InjectRepository(Package)
     private packageRepository: Repository<Package>,
+    private dataSource: DataSource,
   ) {}
 
   async findPackageById(id: string) {
@@ -177,7 +178,7 @@ export class UserService {
     return permissions;
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, creatorId?: string) {
     // 1. Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
@@ -190,29 +191,38 @@ export class UserService {
     // 4. Tạo mã code ref 8 ký tự ngẫu nhiên
     const refCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
-    // 5. Create user instance
-    const newUser = this.userRepository.create({
+    // Xác định ID người quản lý để gán vào danh sách managerIds của user mới
+    let managerIdToLink = creatorId;
+    if (createUserDto.code) {
+      const manager = await this.userRepository.findOne({
+        where: { code: createUserDto.code },
+      });
+      if (manager) {
+        managerIdToLink = manager.id;
+      }
+    }
+
+    // 5. Build user instance with dynamic parameters to avoid strict TS compilation errors
+    const userPayload: any = {
       ...createUserDto,
       password: hashedPassword,
       role,
       code: refCode,
-    });
+    };
+
+    if (creatorId) {
+      userPayload.createdBy = creatorId;
+    }
+
+    if (managerIdToLink) {
+      userPayload.managerIds = [managerIdToLink];
+    }
+
+    const newUser = this.userRepository.create(userPayload);
 
     // 4. Save to database
     const savedUser = await this.userRepository.save(newUser);
-    //kiểm tra ref code
-    const user = await this.userRepository.findOne({
-      where: { code: createUserDto.code },
-    });
-    if (user) {
-      if (!user.managerIds) {
-        user.managerIds = [];
-      }
-      if (!user.managerIds.includes(savedUser.id)) {
-        user.managerIds.push(savedUser.id);
-        await this.userRepository.save(user);
-      }
-    }
+
     return savedUser;
   }
 
@@ -235,6 +245,36 @@ export class UserService {
     const where: any = {};
     if (status) where.status = status;
     if (role) where.role = role;
+
+    const [data, total] = await this.userRepository.findAndCount({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: ['userPermissions'],
+      order: { createdAt: 'DESC' },
+    });
+    return {
+      data,
+      total,
+    };
+  }
+
+  async findByManager(
+    managerId: string,
+    page: number = 1,
+    limit: number = 10,
+    status?: UserStatus,
+    role?: Role,
+    search?: string,
+  ) {
+    const where: any = {
+      managerIds: Raw((alias) => `:managerId = ANY(${alias})`, { managerId }),
+    };
+    if (status) where.status = status;
+    if (role) where.role = role;
+    if (search) {
+      where.userName = ILike(`%${search}%`);
+    }
 
     const [data, total] = await this.userRepository.findAndCount({
       where,
@@ -378,5 +418,40 @@ export class UserService {
     recordLimit[key] = value;
     user.recordLimit = recordLimit;
     return await this.userRepository.save(user);
+  }
+
+  async clearAllExceptUsers() {
+    // 1. Lấy danh sách tất cả các metadata của các thực thể (entities)
+    const entities = this.dataSource.entityMetadatas;
+
+    // 2. Lọc ra các bảng cần xóa (loại trừ bảng user)
+    const entitiesToClear = entities.filter(
+      (entity) => entity.name !== 'User' && entity.tableName !== 'user',
+    );
+
+    // 3. Sử dụng QueryRunner để thực hiện xóa nhanh và bỏ qua các ràng buộc khóa ngoại (CASCADE)
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const entity of entitiesToClear) {
+        await queryRunner.query(
+          `TRUNCATE TABLE "${entity.tableName}" RESTART IDENTITY CASCADE;`,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+      return {
+        status: true,
+        message:
+          'Đã xóa toàn bộ dữ liệu tất cả các bảng (trừ bảng người dùng) thành công!',
+      };
+    } catch (error: any) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Lỗi khi dọn dẹp dữ liệu: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

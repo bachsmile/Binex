@@ -12,10 +12,17 @@ export default defineNuxtConfig({
     },
   },
   modules: [
+    "@element-plus/nuxt",
     "@nuxt/icon",
     "@nuxt/image",
     "@nuxtjs/tailwindcss",
     "@nuxtjs/color-mode",
+  ],
+  components: [
+    {
+      path: '~/components',
+      pathPrefix: false,
+    }
   ],
   colorMode: {
     classSuffix: "-mode",
@@ -26,6 +33,9 @@ export default defineNuxtConfig({
   css: ["~/tailwind.css"],
   future: {
     compatibilityVersion: 4,
+  },
+  imports: {
+    dirs: ['api']
   },
   runtimeConfig: {
     public: {

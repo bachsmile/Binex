@@ -24,5 +24,7 @@ export interface MethodPay {
 
   status: string;
 
+  userId: string;
+
 }
 

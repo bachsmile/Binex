@@ -16,6 +16,8 @@ import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { Role } from 'src/modules/auth/enums/role.enum';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
+import { User } from 'src/modules/user/entities/user.entity';
 
 @ApiTags('method-pay')
 @ApiBearerAuth('JWT-auth')
@@ -25,13 +27,30 @@ export class MethodPayController {
   constructor(private readonly methodPayService: MethodPayService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Tạo phương thức thanh toán mới' })
-  create(@Body() createMethodPayDto: CreateMethodPayDto) {
-    return this.methodPayService.create(createMethodPayDto);
+  create(
+    @Body() createMethodPayDto: CreateMethodPayDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.methodPayService.create(createMethodPayDto, user?.id);
+  }
+
+  @Get('mine')
+  @ApiOperation({ summary: 'Lấy danh sách phương thức thanh toán của cá nhân' })
+  findMine(@CurrentUser() user: User) {
+    return this.methodPayService.findMine(user.id);
+  }
+
+  @Get('system')
+  @ApiOperation({
+    summary: 'Lấy danh sách phương thức thanh toán của hệ thống Binex',
+  })
+  findSystem() {
+    return this.methodPayService.findSystem();
   }
 
   @Get()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Lấy danh sách tất cả phương thức thanh toán' })
   findAll() {
     return this.methodPayService.findAll();

@@ -12,6 +12,7 @@ const walletApi = useWalletApi();
 const uploadApi = useUploadApi();
 const payApi = usePayApi();
 const methodPayApi = useMethodPayApi();
+const { public: { apiBaseUrl } } = useRuntimeConfig();
 
 const amount = ref<number | null>(null);
 const currentStep = ref(1); // 1: Input, 2: Transfer Info, 3: Verification, 4: Success
@@ -31,6 +32,9 @@ const userTransactionCode = ref(''); // input from user bank app
 const userProofImage = ref(''); // uploaded image URL
 const fileInput = ref<HTMLInputElement | null>(null);
 
+// System bank accounts (Binex receiving accounts)
+const systemAccounts = ref<any[]>([]);
+
 const vnBanks = [
   'Vietcombank', 'Techcombank', 'MB Bank', 'Agribank', 'VietinBank', 
   'BIDV', 'ACB', 'VPBank', 'TPBank', 'Sacombank', 'Momo', 'ZaloPay'
@@ -39,7 +43,7 @@ const vnBanks = [
 // Fetch available methods
 const fetchMethods = async () => {
   try {
-    const res = await methodPayApi.findAll();
+    const res = await methodPayApi.findMine();
     const data = res?.data;
     if (Array.isArray(data)) {
       methods.value = data;
@@ -49,13 +53,63 @@ const fetchMethods = async () => {
     
     if (methods.value.length > 0 && !selectedMethodId.value) {
       selectedMethodId.value = methods.value[0].id;
+      isManualMode.value = false;
+    } else if (methods.value.length === 0) {
+      isManualMode.value = true;
     }
   } catch (err) {
     console.error('Lỗi lấy danh sách phương thức:', err);
   }
 };
 
-onMounted(fetchMethods);
+// Fetch system (Binex) bank accounts
+const fetchSystemAccounts = async () => {
+  try {
+    const res = await methodPayApi.findSystem();
+    const data = res?.data;
+    if (Array.isArray(data)) {
+      systemAccounts.value = data;
+    } else if (data && Array.isArray(data.items)) {
+      systemAccounts.value = data.items;
+    }
+  } catch (err) {
+    console.error('Lỗi lấy tài khoản hệ thống:', err);
+  }
+};
+
+const saveToPersonalAccount = async () => {
+  if (!manualBank.value || !manualAccount.value) return;
+  
+  isProcessing.value = true;
+  try {
+    const payload = {
+      name: manualBank.value,
+      bankName: manualBank.value,
+      bankNumber: manualAccount.value,
+      accountHolderName: user.value?.fullName || user.value?.userName || 'Cá nhân',
+      type: 'account',
+      code: manualBank.value.substring(0, 3).toUpperCase(),
+      status: 'active'
+    };
+    
+    await methodPayApi.create(payload as any);
+    await fetchMethods();
+    isManualMode.value = false;
+    // Tìm phương thức vừa tạo để select
+    const newMethod = methods.value.find(m => m.bankNumber === manualAccount.value);
+    if (newMethod) selectedMethodId.value = newMethod.id;
+  } catch (err) {
+    console.error('Lỗi lưu tài khoản:', err);
+    errorMessage.value = 'Không thể lưu tài khoản vào danh sách cá nhân.';
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchMethods();
+  fetchSystemAccounts();
+});
 
 // Watch depositData to pre-fill amount
 watch(() => depositData.value, (data) => {
@@ -73,12 +127,24 @@ const selectedMethodDetails = computed(() => {
   const method = methods.value.find(m => m.id === selectedMethodId.value);
   return method ? {
     bankName: method.bankName,
-    accountNumber: method.accountNumber,
-    accountName: method.accountName || 'BINEX BANK'
+    accountNumber: method.bankNumber,
+    accountName: method.accountHolderName || 'BINEX BANK'
   } : {
     bankName: 'Chưa chọn',
     accountNumber: '',
     accountName: ''
+  };
+});
+
+// System bank info for Step 2 (Binex receiving account)
+const systemBankInfo = computed(() => {
+  const acc = systemAccounts.value[0];
+  if (!acc) return null;
+  return {
+    bankName: acc.bankName,
+    accountNumber: acc.bankNumber,
+    accountName: acc.accountHolderName,
+    code: acc.code
   };
 });
 
@@ -94,7 +160,7 @@ const handleFileUpload = async (event: Event) => {
   try {
     const res = await uploadApi.uploadImages(formData);
     if (res?.data && res.data[0]?.url) {
-      userProofImage.value = res.data[0].url;
+      userProofImage.value = `${apiBaseUrl}${res.data[0].url}`;
     }
   } catch (err) {
     errorMessage.value = 'Lỗi khi tải ảnh lên. Vui lòng thử lại.';
@@ -145,7 +211,7 @@ const handleSubmitManual = async () => {
     };
 
     const res = await payApi.submitManualPayment(payload);
-    if (!res.error.value) {
+    if (res.data) {
       currentStep.value = 4;
     } else {
       errorMessage.value = 'Gửi xác minh thất bại. Vui lòng kiểm tra lại thông tin.';
@@ -230,17 +296,24 @@ const close = () => {
                 <label class="block text-white/40 text-[10px] font-black uppercase tracking-widest mb-4">Phương thức nạp</label>
                 <div class="grid grid-cols-2 gap-3 mb-6">
                   <!-- System Methods -->
-                  <div v-for="m in methods" :key="m.id"
-                       @click="selectedMethodId = m.id; isManualMode = false"
-                       class="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/[0.05] transition-all"
-                       :class="{ 'border-[#CCFF00]/50 bg-white/[0.05]': selectedMethodId === m.id && !isManualMode }">
-                    <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[#CCFF00]">
-                        <Icon name="ph:bank-bold" />
+                  <template v-if="methods.length > 0">
+                    <div v-for="m in methods" :key="m.id"
+                         @click="selectedMethodId = m.id; isManualMode = false"
+                         class="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/[0.05] transition-all"
+                         :class="{ 'border-[#CCFF00]/50 bg-white/[0.05]': selectedMethodId === m.id && !isManualMode }">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[#CCFF00]">
+                          <Icon name="ph:bank-bold" />
+                        </div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-white">{{ m.bankName }}</span>
                       </div>
-                      <span class="text-[10px] font-bold uppercase tracking-wider text-white">{{ m.bankName }}</span>
                     </div>
-                  </div>
+                  </template>
+                  <template v-else>
+                    <div class="col-span-2 p-6 bg-white/[0.01] border border-dashed border-white/10 rounded-2xl text-center">
+                       <p class="text-white/20 text-[10px] font-bold uppercase tracking-widest italic">Chưa có tài khoản cá nhân đăng ký</p>
+                    </div>
+                  </template>
 
                   <!-- Manual Mode Trigger -->
                   <div @click="isManualMode = true; selectedMethodId = ''"
@@ -273,6 +346,13 @@ const close = () => {
                              placeholder="Nhập số tài khoản..."
                              class="w-full py-3 px-4 bg-white/[0.03] border border-white/10 rounded-xl text-xs font-bold text-[#CCFF00] focus:border-[#CCFF00] outline-none transition-all" />
                     </div>
+                    
+                    <button v-if="manualBank && manualAccount"
+                            @click="saveToPersonalAccount"
+                            class="flex items-center gap-2 text-[#CCFF00] text-[8px] font-black uppercase tracking-widest hover:underline transition-all">
+                      <Icon name="ph:floppy-disk-bold" />
+                      Thêm vào tài khoản cá nhân
+                    </button>
                   </div>
                 </Transition>
               </div>
@@ -289,42 +369,50 @@ const close = () => {
             <div v-if="currentStep === 2" class="animate-modal-in flex flex-col md:flex-row gap-12">
               <!-- Left: Receiving Info -->
               <div class="flex-1 space-y-8">
-                <div class="flex flex-col items-center">
-                  <div class="relative group">
-                    <div class="absolute -inset-4 bg-[#CCFF00]/10 blur-3xl rounded-full"></div>
-                    <div class="relative w-56 h-56 p-4 bg-white rounded-[2rem] border-4 border-[#CCFF00] flex items-center justify-center">
-                      <img v-if="selectedMethodDetails?.accountNumber"
-                           :src="`https://img.vietqr.io/image/970407-${selectedMethodDetails?.accountNumber}-compact2.jpg?amount=${amount}&addInfo=BINEX ${transactionCode}&accountName=${selectedMethodDetails?.accountName}`" 
-                           class="w-full h-full object-contain" 
-                           alt="VietQR Transfer" />
-                      <div v-else class="text-black/20 flex flex-col items-center">
-                        <Icon name="ph:qr-code-bold" size="48" />
-                        <p class="text-[8px] font-bold mt-2 uppercase">Chưa có thông tin</p>
-                      </div>
-                    </div>
-                  </div>
-                  <p class="mt-4 text-white/40 text-[8px] font-black uppercase tracking-[0.3em]">Quét mã VietQR để nạp nhanh</p>
+                <div v-if="!systemBankInfo" class="flex flex-col items-center justify-center py-12">
+                  <Icon name="ph:bank-bold" size="48" class="text-white/20 mb-4" />
+                  <p class="text-white/40 text-xs font-bold uppercase tracking-widest">Chưa có tài khoản hệ thống</p>
+                  <p class="text-white/20 text-[9px] mt-1">Vui lòng liên hệ quản trị viên</p>
                 </div>
 
-                <div class="space-y-px bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-                  <div class="p-4 flex justify-between items-center bg-white/[0.02]">
-                    <span class="text-white/20 text-[9px] font-bold uppercase tracking-widest">Ngân hàng</span>
-                    <span class="text-white font-black text-[10px] uppercase tracking-tighter">{{ selectedMethodDetails?.bankName }}</span>
+                <template v-else>
+                  <div class="flex flex-col items-center">
+                    <div class="relative group">
+                      <div class="absolute -inset-4 bg-[#CCFF00]/10 blur-3xl rounded-full"></div>
+                      <div class="relative w-56 h-56 p-4 bg-white rounded-[2rem] border-4 border-[#CCFF00] flex items-center justify-center">
+                        <img v-if="systemBankInfo.accountNumber"
+                             :src="`https://img.vietqr.io/image/${systemBankInfo.code}-${systemBankInfo.accountNumber}-compact2.jpg?amount=${amount}&addInfo=BINEX ${transactionCode}&accountName=${systemBankInfo.accountName}`" 
+                             class="w-full h-full object-contain" 
+                             alt="VietQR Transfer" />
+                        <div v-else class="text-black/20 flex flex-col items-center">
+                          <Icon name="ph:qr-code-bold" size="48" />
+                          <p class="text-[8px] font-bold mt-2 uppercase">Chưa có thông tin</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p class="mt-4 text-white/40 text-[8px] font-black uppercase tracking-[0.3em]">Quét mã VietQR để nạp nhanh</p>
                   </div>
-                  <div class="p-4 flex justify-between items-center bg-white/[0.01]">
-                    <span class="text-white/20 text-[9px] font-bold uppercase tracking-widest">Số tài khoản</span>
-                    <div class="flex items-center gap-2">
-                      <span class="text-white font-black text-xs tracking-widest">{{ selectedMethodDetails?.accountNumber }}</span>
-                      <button @click="copyToClipboard(selectedMethodDetails?.accountNumber)" class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center text-[#CCFF00] hover:bg-[#CCFF00] hover:text-black transition-all">
-                        <Icon name="ph:copy-bold" size="12" />
-                      </button>
+
+                  <div class="space-y-px bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                    <div class="p-4 flex justify-between items-center bg-white/[0.02]">
+                      <span class="text-white/20 text-[9px] font-bold uppercase tracking-widest">Ngân hàng</span>
+                      <span class="text-white font-black text-[10px] uppercase tracking-tighter">{{ systemBankInfo.bankName }}</span>
+                    </div>
+                    <div class="p-4 flex justify-between items-center bg-white/[0.01]">
+                      <span class="text-white/20 text-[9px] font-bold uppercase tracking-widest">Số tài khoản</span>
+                      <div class="flex items-center gap-2">
+                        <span class="text-white font-black text-xs tracking-widest">{{ systemBankInfo.accountNumber }}</span>
+                        <button @click="copyToClipboard(systemBankInfo.accountNumber)" class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center text-[#CCFF00] hover:bg-[#CCFF00] hover:text-black transition-all">
+                          <Icon name="ph:copy-bold" size="12" />
+                        </button>
+                      </div>
+                    </div>
+                    <div class="p-4 flex justify-between items-center bg-white/[0.02]">
+                      <span class="text-white/20 text-[9px] font-bold uppercase tracking-widest">Chủ tài khoản</span>
+                      <span class="text-white font-black text-[10px] uppercase tracking-tighter">{{ systemBankInfo.accountName }}</span>
                     </div>
                   </div>
-                  <div class="p-4 flex justify-between items-center bg-white/[0.02]">
-                    <span class="text-white/20 text-[9px] font-bold uppercase tracking-widest">Chủ tài khoản</span>
-                    <span class="text-white font-black text-[10px] uppercase tracking-tighter">{{ selectedMethodDetails?.accountName }}</span>
-                  </div>
-                </div>
+                </template>
               </div>
 
               <!-- Right: Payment Info & Button -->

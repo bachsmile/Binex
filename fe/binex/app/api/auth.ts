@@ -12,8 +12,6 @@ import type { RedeemKeyResponse } from '~/types/response/auth';
 export const useAuthApi = () => {
   const api = useApi();
   return {
-    ...api, // Giải nén để lấy sẵn 'call', 'loading', 'error'
-
     login: (payload: LoginDto) => 
       api.call<ApiResponse<LoginResponse>, ApiError>('/auth/login', 'POST', payload),
 

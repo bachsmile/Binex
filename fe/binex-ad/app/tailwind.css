@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Light Theme */
-    --color-primary: 79 70 229;            /* Indigo 600 */
+    --color-primary: 15 169 88;            /* Green 600 (Binex Default) */
     --color-primary-foreground: 255 255 255;
     
     --color-secondary: 236 72 153;          /* Pink 500 */
@@ -17,7 +17,7 @@
 
   .dark-mode {
     /* Dark Theme */
-    --color-primary: 129 140 248;           /* Indigo 400 */
+    --color-primary: 16 185 129;           /* Emerald 500 */
     --color-primary-foreground: 15 23 42;
     
     --color-secondary: 244 114 182;         /* Pink 400 */
