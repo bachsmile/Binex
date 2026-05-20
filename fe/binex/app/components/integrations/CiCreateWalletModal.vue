@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useWalletApi } from '~/api/wallet';
 import { useUserApi } from '~/api/user';
+import { useUser } from '~/composables/useUser';
 import mascotLogin from '/img/mascot_login.png';
 
 const isOpen = useState('create-wallet-modal-open', () => false);

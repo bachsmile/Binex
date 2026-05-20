@@ -6,11 +6,11 @@ import type { ApiResponse, ApiListResponse } from '~/types/api-response';
 export const useUploadApi = () => {
   const api = useApi();
   return {
-    uploadImages: (payload: FormData) => 
-      api.call<ApiResponse<any>, ApiError>('/upload/images', 'POST', payload),
+    uploadImages: () => 
+      api.call<ApiResponse<any>, ApiError>('/upload/images', 'POST'),
 
-    uploadVideos: (payload: FormData) => 
-      api.call<ApiResponse<any>, ApiError>('/upload/videos', 'POST', payload),
+    uploadVideos: () => 
+      api.call<ApiResponse<any>, ApiError>('/upload/videos', 'POST'),
 
   };
 };

@@ -35,6 +35,9 @@ export interface CreateServiceDto {
 
   packageIds?: string[];
 
+  /**
+   * example: https://example.com/thumbnail.png
+   */
   thumbnail?: string;
 
 }

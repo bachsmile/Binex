@@ -10,8 +10,8 @@ export const useServiceApi = () => {
     create: (payload: CreateServiceDto) => 
       api.call<ApiResponse<Service>, ApiError>('/service', 'POST', payload),
 
-    findAll: (params?: any) => 
-      api.call<ApiListResponse<Service>, ApiError>('/service', 'GET', params),
+    findAll: () => 
+      api.call<ApiListResponse<Service>, ApiError>('/service', 'GET'),
 
     findOne: (payload: string) => 
       api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'GET'),
@@ -19,8 +19,8 @@ export const useServiceApi = () => {
     findByUserId: (payload: string) => 
       api.call<ApiResponse<string>, ApiError>(`/service/user/${payload}`, 'GET'),
 
-    update: (id: string, payload: any) => 
-      api.call<ApiResponse<Service>, ApiError>(`/service/${id}`, 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'PATCH'),
 
     remove: (payload: string) => 
       api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'DELETE'),

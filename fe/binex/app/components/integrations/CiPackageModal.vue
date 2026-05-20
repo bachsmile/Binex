@@ -19,7 +19,8 @@ const fetchWallet = async () => {
   if (!hasWallet.value) return;
   isFetchingWallet.value = true;
   const res = await walletApi.findAll();
-  if (res && res.data) {
+  
+  if (res.statusCode === 200 && res.data) {
     walletData.value = Array.isArray(res.data) ? res.data[0] : res.data;
   }
   isFetchingWallet.value = false;
@@ -240,9 +241,9 @@ const handlePayment = async () => {
                       <!-- Wallet Balance Display -->
                       <div v-if="m.id === 'binex' && walletData" class="mt-1">
                         <p class="text-[10px] font-black uppercase tracking-widest transition-colors"
-                           :class="(walletData.balance || 0) < (invoice?.total || 0) ? 'text-red-500' : 'text-[#CCFF00]'">
-                          Số dư: {{ (walletData.balance || 0).toLocaleString() }}đ
-                          <span v-if="(walletData.balance || 0) < (invoice?.total || 0)" class="ml-2">(Không đủ số dư)</span>
+                           :class="(walletData.balance?.VND || 0) < (invoice?.total || 0) ? 'text-red-500' : 'text-[#CCFF00]'">
+                          Số dư: {{ (walletData.balance?.VND || 0).toLocaleString() }}đ
+                          <span v-if="(walletData.balance?.VND || 0) < (invoice?.total || 0)" class="ml-2">(Không đủ số dư)</span>
                         </p>
                       </div>
                       <p v-else class="text-white/20 text-[9px] uppercase tracking-widest">Giao dịch an toàn & bảo mật</p>

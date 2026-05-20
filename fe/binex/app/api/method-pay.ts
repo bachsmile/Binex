@@ -1,13 +1,19 @@
 /** Auto-generated API */
 import type { ApiError } from '~/types/api-error';
 import type { ApiResponse, ApiListResponse } from '~/types/api-response';
-import type { CreateMethodPayDto } from '~/types/payload/create-method-pay';
+
 
 export const useMethodPayApi = () => {
   const api = useApi();
   return {
-    create: (payload: CreateMethodPayDto) => 
-      api.call<ApiResponse<any>, ApiError>('/method-pay', 'POST', payload),
+    create: () => 
+      api.call<ApiResponse<any>, ApiError>('/method-pay', 'POST'),
+
+    findMine: () => 
+      api.call<ApiResponse<any>, ApiError>('/method-pay/mine', 'GET'),
+
+    findSystem: () => 
+      api.call<ApiResponse<any>, ApiError>('/method-pay/system', 'GET'),
 
     findAll: () => 
       api.call<ApiResponse<any>, ApiError>('/method-pay', 'GET'),

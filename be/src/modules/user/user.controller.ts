@@ -22,6 +22,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
 import { UserStatus } from './entities/user.entity';
 import { CheckPermissions } from 'src/decorators/permissions.decorator';
 import {
@@ -83,9 +84,16 @@ export class UserController {
     return this.userService.getUserPermissions(userId);
   }
 
+  @Post('clear-except-users')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Xoá toàn bộ data bảng trừ bảng user' })
+  clearAllExceptUsers() {
+    return this.userService.clearAllExceptUsers();
+  }
+
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  create(@Body() createUserDto: CreateUserDto, @CurrentUser() creator?: any) {
+    return this.userService.create(createUserDto, creator?.id);
   }
 
   @Get()
@@ -109,6 +117,29 @@ export class UserController {
       Number(limit) || 10,
       status,
       role,
+    );
+  }
+
+  @Get('mine')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Lấy danh sách người dùng do mình quản lý phân trang',
+  })
+  findMine(
+    @CurrentUser() user: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: UserStatus,
+    @Query('role') role?: Role,
+    @Query('search') search?: string,
+  ) {
+    return this.userService.findByManager(
+      user.id,
+      Number(page) || 1,
+      Number(limit) || 10,
+      status,
+      role,
+      search,
     );
   }
 

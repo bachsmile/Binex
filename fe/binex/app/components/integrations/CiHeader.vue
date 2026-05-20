@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 const token = useCookie('auth_token')
 const router = useRouter()
 const isScrolled = ref(false)

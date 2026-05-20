@@ -1,9 +1,12 @@
-import type { User } from '~/types/response/user';
+import type { User } from "~/types/response/user";
 
 export const useUser = () => {
-  const user = useState<User | null>('user-info', () => null);
+  const user = useState<User | null>("user-info", () => null);
 
-  const isCreateWalletModalOpen = useState('create-wallet-modal-open', () => false);
+  const isCreateWalletModalOpen = useState(
+    "create-wallet-modal-open",
+    () => false,
+  );
 
   const setUser = (userData: User | null) => {
     user.value = userData;
@@ -29,15 +32,19 @@ export const useUser = () => {
     packageId?: string;
     serviceId?: string;
     amount?: number;
-  } | null>('deposit-data', () => null);
+  } | null>("deposit-data", () => null);
 
-  const openDepositModal = (data?: { packageId?: string, serviceId?: string, amount?: number }) => {
+  const openDepositModal = (data?: {
+    packageId?: string;
+    serviceId?: string;
+    amount?: number;
+  }) => {
     depositData.value = data || null;
-    useState('deposit-modal-open').value = true;
+    useState("deposit-modal-open").value = true;
   };
 
   const closeDepositModal = () => {
-    useState('deposit-modal-open').value = false;
+    useState("deposit-modal-open").value = false;
     depositData.value = null;
   };
 
@@ -50,8 +57,8 @@ export const useUser = () => {
     openCreateWalletModal,
     closeCreateWalletModal,
     depositData,
-    isDepositModalOpen: useState('deposit-modal-open', () => false),
+    isDepositModalOpen: useState("deposit-modal-open", () => false),
     openDepositModal,
-    closeDepositModal
+    closeDepositModal,
   };
 };

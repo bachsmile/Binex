@@ -3,6 +3,7 @@ import { ulid } from 'ulid';
 
 export enum MethodPayType {
   ACCOUNT_NUMBER = 'account',
+  BINEX = 'binex',
   CARD_NUMBER = 'card',
 }
 
@@ -21,10 +22,10 @@ export class MethodPay {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   bankNumber: string;
 
-  @Column()
+  @Column({ nullable: true })
   cardNumber: string;
 
   @Column()
@@ -33,7 +34,7 @@ export class MethodPay {
   @Column()
   bankName: string;
 
-  @Column()
+  @Column({ nullable: true })
   QRCode: string;
 
   @Column()
@@ -48,4 +49,7 @@ export class MethodPay {
 
   @Column()
   status: string;
+
+  @Column({ nullable: true })
+  userId: string;
 }

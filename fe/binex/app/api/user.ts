@@ -18,6 +18,9 @@ export const useUserApi = () => {
     getUserPermissions: (payload: string) => 
       api.call<ApiResponse<any>, ApiError>(`/user/${payload}/permissions`, 'GET'),
 
+    clearAllExceptUsers: () => 
+      api.call<ApiResponse<any>, ApiError>('/user/clear-except-users', 'POST'),
+
     create: (payload: CreateUserDto) => 
       api.call<ApiResponse<any>, ApiError>('/user', 'POST', payload),
 
@@ -27,11 +30,14 @@ export const useUserApi = () => {
     findPage: () => 
       api.call<ApiResponse<any>, ApiError>('/user/page', 'GET'),
 
+    findMine: () => 
+      api.call<ApiResponse<any>, ApiError>('/user/mine', 'GET'),
+
     findOne: (payload: string) => 
       api.call<ApiResponse<any>, ApiError>(`/user/${payload}`, 'GET'),
 
-    update: (id: string, payload: any) => 
-      api.call<ApiResponse<any>, ApiError>(`/user/${id}`, 'PATCH', payload),
+    update: (payload: string) => 
+      api.call<ApiResponse<any>, ApiError>(`/user/${payload}`, 'PATCH'),
 
     remove: (payload: string) => 
       api.call<ApiResponse<any>, ApiError>(`/user/${payload}`, 'DELETE'),

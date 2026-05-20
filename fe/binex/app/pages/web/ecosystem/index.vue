@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CiHeader from '~/components/integrations/CiHeader.vue'
-import CpPhoneCarousel from '~/components/commons/pages/CpPhoneCarousel.vue'
+import CpPhoneCarousel from '~/components/commons/CmPhoneCarousel.vue'
 import CpEcosystemOrbit from '~/components/pages/ecosystem/CpEcosystemOrbit.vue'
 import CmEmpty from '~/components/commons/CmEmpty.vue'
 import { useServiceApi } from '~/api/service'
