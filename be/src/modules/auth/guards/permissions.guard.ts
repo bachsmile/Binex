@@ -36,7 +36,6 @@ export class PermissionsGuard implements CanActivate {
 
     const xRole = request.headers['x-role'];
 
-
     // 1. Kiểm tra x-role nếu cần thiết (ví dụ x-role phải khớp với role của user)
     if (xRole && user.role !== xRole) {
       throw new ForbiddenException(
@@ -44,20 +43,20 @@ export class PermissionsGuard implements CanActivate {
       );
     }
 
-    // 2. Kiểm tra chi tiết permission (Binary)
-    const userPermissions = user.userPermissions || [];
+    // 2. Kiểm tra chi tiết subscription (Binary)
+    const userSubscriptions = user.userSubscriptions || [];
 
-    // Tìm permission cho service tương ứng
-    const permission = userPermissions.find((p) => p.ser === required.service);
+    // Tìm subscription cho service tương ứng
+    const subscription = userSubscriptions.find((s) => s.ser === required.service);
 
-    if (!permission) {
+    if (!subscription) {
       throw new ForbiddenException(
         `Bạn không có quyền truy cập service: ${required.service}`,
       );
     }
 
     // Kiểm tra bằng toán tử bitwise &
-    const hasAction = (permission.ac & required.action) === required.action;
+    const hasAction = (subscription.ac & required.action) === required.action;
 
     if (!hasAction) {
       throw new ForbiddenException(

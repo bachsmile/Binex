@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,16 +13,26 @@ import {
   TransactionType,
   TransactionStatus,
 } from './entities/transaction.entity';
+import { Role } from '../auth/enums/role.enum';
+import { MethodPay } from '../pay/entities/method-pay.entity';
 
 @Injectable()
 export class WalletService {
+  private readonly logger = new Logger(WalletService.name);
+
   constructor(
     @InjectRepository(Wallet)
     private walletRepository: Repository<Wallet>,
-  ) {}
+    @InjectRepository(MethodPay)
+    private methodPayRepository: Repository<MethodPay>,
+    private configService: ConfigService,
+  ) { }
 
   async create(createWalletDto: CreateWalletDto, userId: string) {
     return await this.walletRepository.manager.transaction(async (manager) => {
+      const user = await manager.findOne(User, { where: { id: userId } });
+      const isAdminWallet = user?.role === Role.SUPER_ADMIN;
+
       // 0. Kiểm tra xem người dùng đã có ví chưa
       const userWallet = await manager.findOne(Wallet, {
         where: { userId },
@@ -74,6 +85,7 @@ export class WalletService {
           ...createWalletDto,
           userId,
           address,
+          isAdminWallet,
           createdBy: userId,
           updatedBy: userId,
         });
@@ -81,18 +93,7 @@ export class WalletService {
         savedWallet = await manager.save(wallet);
       }
 
-      // 4. CẬP NHẬT BẢNG USER (Sử dụng update trực tiếp để đảm bảo lưu mảng lên PostgreSQL)
-      const user = await manager.findOne(User, { where: { id: userId } });
-      if (user) {
-        const walletIds = user.walletIds || [];
-        if (!walletIds.includes(savedWallet.id)) {
-          const updatedWalletIds = [...walletIds, savedWallet.id];
-          await manager.update(User, userId, { walletIds: updatedWalletIds });
-          console.log(
-            `[Wallet] Updated user ${userId} with wallet ${savedWallet.id}`,
-          );
-        }
-      }
+
 
       return savedWallet;
     });
@@ -170,6 +171,17 @@ export class WalletService {
     return { data, total };
   }
 
+  async findAllAdmin(page: number = 1, limit: number = 100) {
+    const [data, total] = await this.walletRepository.findAndCount({
+      where: { isAdminWallet: true },
+      relations: ['user'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+    return { data, total };
+  }
+
   findOne(id: string) {
     return this.walletRepository.findOne({ where: { id } });
   }
@@ -183,18 +195,31 @@ export class WalletService {
   }
 
   async transfer(
-    fromUserId: string,
-    toAddress: string,
+    from: string | undefined,
+    to: string,
     amount: number,
     currency: string,
+    actorUserId: string,
+    canUseAnyFromWallet: boolean,
   ) {
     return await this.walletRepository.manager.transaction(async (manager) => {
+      if (!amount || amount <= 0) {
+        throw new BadRequestException('Số tiền chuyển phải lớn hơn 0');
+      }
+      if (!['VND', 'USD'].includes(currency)) {
+        throw new BadRequestException('Loại tiền không hợp lệ');
+      }
+
       // 1. Lấy ví người gửi
-      const fromWallet = await manager.findOne(Wallet, {
-        where: { userId: fromUserId },
-      });
+      const fromWallet = from
+        ? await manager.findOne(Wallet, { where: { address: from } })
+        : await manager.findOne(Wallet, { where: { userId: actorUserId } });
       if (!fromWallet) {
         throw new BadRequestException('Không tìm thấy ví người gửi');
+      }
+
+      if (!canUseAnyFromWallet && fromWallet.userId !== actorUserId) {
+        throw new BadRequestException('Bạn không có quyền chuyển tiền từ ví này');
       }
 
       const fromBalance = fromWallet.balance[currency] || 0;
@@ -204,7 +229,7 @@ export class WalletService {
 
       // 2. Lấy ví người nhận qua address
       const toWallet = await manager.findOne(Wallet, {
-        where: { address: toAddress },
+        where: { address: to },
       });
       if (!toWallet) {
         throw new BadRequestException('Địa chỉ ví nhận không tồn tại');
@@ -233,8 +258,8 @@ export class WalletService {
         currency,
         type: TransactionType.TRANSFER,
         status: TransactionStatus.SUCCESS,
-        userId: fromUserId,
-        description: `Chuyển ${amount} ${currency} tới ${toAddress}`,
+        userId: fromWallet.userId,
+        description: `Chuyển ${amount} ${currency} tới ${to}`,
       });
       await manager.save(transaction);
 
@@ -259,11 +284,32 @@ export class WalletService {
     });
   }
 
-  async deposit(address: string, amount: number, currency: string) {
+  async deposit(
+    address: string,
+    amount: number,
+    currency: string,
+    methodPayId?: string,
+    description?: string,
+    actorUserId?: string,
+  ) {
     return await this.walletRepository.manager.transaction(async (manager) => {
+      if (!amount || amount <= 0) {
+        throw new BadRequestException('Số tiền nạp phải lớn hơn 0');
+      }
+      if (!['VND', 'USD'].includes(currency)) {
+        throw new BadRequestException('Loại tiền không hợp lệ');
+      }
+
       const wallet = await manager.findOne(Wallet, { where: { address } });
       if (!wallet) {
         throw new BadRequestException('Không tìm thấy ví với địa chỉ này');
+      }
+
+      const methodPay = methodPayId
+        ? await manager.findOne(MethodPay, { where: { id: methodPayId } })
+        : null;
+      if (methodPayId && !methodPay) {
+        throw new BadRequestException('Không tìm thấy ngân hàng đã chọn');
       }
 
       const newBalance = { ...wallet.balance };
@@ -272,7 +318,11 @@ export class WalletService {
       wallet.balance = newBalance;
       await manager.save(wallet);
 
-      // Lưu lịch sử nạp tiền
+      const transactionDescription =
+        description?.trim() ||
+        `Nạp ${amount} ${currency} vào ví${methodPay ? ` qua ${methodPay.bankName || methodPay.name}` : ''
+        }`;
+
       const transaction = manager.create(Transaction, {
         toAddress: address,
         amount,
@@ -280,7 +330,7 @@ export class WalletService {
         type: TransactionType.DEPOSIT,
         status: TransactionStatus.SUCCESS,
         userId: wallet.userId,
-        description: `Nạp ${amount} ${currency} vào ví`,
+        description: transactionDescription,
       });
       await manager.save(transaction);
 
@@ -288,7 +338,21 @@ export class WalletService {
         success: true,
         data: wallet,
         transactionId: transaction.id,
+        methodPayId: methodPay?.id,
+        createdBy: actorUserId,
       };
     });
+  }
+
+  async getAdminWallet() {
+    const adminWallet = await this.walletRepository.findOne({
+      where: { isAdminWallet: true },
+      order: { createdAt: 'ASC' },
+    });
+    if (!adminWallet) {
+      this.logger.error('No admin wallet found in the database.');
+      throw new Error('Admin wallet address not configured in database.');
+    }
+    return adminWallet.address;
   }
 }

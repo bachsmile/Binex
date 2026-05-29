@@ -48,14 +48,13 @@ const error = ref('');
 // Declare cookies synchronously at the top level of script setup
 const tokenCookie = useCookie('auth_token', { maxAge: 604800, path: '/' });
 const roleCookie = useCookie('user_role', { maxAge: 604800, path: '/' });
-const codeCookie = useCookie('user_code', { maxAge: 604800, path: '/' });
+const idCookie = useCookie('user_id', { maxAge: 604800, path: '/' });
 
 const authApi = useAuthApi();
 
 const handleLogin = async () => {
   loading.value = true;
   error.value = '';
-  
   const response = await authApi.login({
     userName: userName.value,
     password: password.value
@@ -74,16 +73,16 @@ const handleLogin = async () => {
   const loginData = response.data;
   tokenCookie.value = loginData.accessToken;
   roleCookie.value = loginData.user?.role;
-  codeCookie.value = loginData.user?.code;
+  idCookie.value = loginData.user?.id;
   
   if (process.client) {
     document.cookie = `auth_token=${loginData.accessToken}; max-age=604800; path=/; SameSite=Lax`;
     document.cookie = `user_role=${loginData.user?.role}; max-age=604800; path=/; SameSite=Lax`;
-    document.cookie = `user_code=${loginData.user?.code || ''}; max-age=604800; path=/; SameSite=Lax`;
+    document.cookie = `user_id=${loginData.user?.id || ''}; max-age=604800; path=/; SameSite=Lax`;
   }
   
-  // Success redirect
-  navigateTo('/');
+  // Success redirect with external load to ensure cookies are sent in HTTP headers during initial server load
+  navigateTo('/', { external: true });
 };
 </script>
 

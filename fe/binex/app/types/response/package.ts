@@ -1,5 +1,5 @@
 /** Auto-generated response */
-
+import type { Service } from './service';
 
 export interface Package {
 
@@ -7,6 +7,8 @@ export interface Package {
 
 
   name: string;
+
+  code: string;
 
   description: string;
 
@@ -28,9 +30,7 @@ export interface Package {
 
   updatedAt: Date;
 
-  serviceId: string;
-
-  ser: number;
+  services: Service[];
 
 }
 

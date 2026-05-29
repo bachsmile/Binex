@@ -13,7 +13,7 @@ import { Wedding } from './wedding.entity';
 
 @Entity('wd_web')
 export class WdWeb {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()

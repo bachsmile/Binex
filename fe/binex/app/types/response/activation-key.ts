@@ -14,7 +14,7 @@ export interface ActivationKey {
 
   packageId: string;
 
-  serviceId: string;
+  serviceGroupId: string;
 
   isUsed: boolean;
 

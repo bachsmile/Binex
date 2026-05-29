@@ -32,16 +32,16 @@ export class ServiceController {
     return this.serviceService.findAll(Number(page) || 1, Number(limit) || 10);
   }
 
+  @Get('services/all')
+  @ApiResponse({ status: 200, type: [Service] })
+  findAllServices() {
+    return this.serviceService.findAllServices();
+  }
+
   @Get(':id')
   @ApiResponse({ status: 200, type: Service })
   findOne(@Param('id') id: string) {
     return this.serviceService.findOne(id);
-  }
-
-  @Get('user/:userId')
-  @ApiResponse({ status: 200, type: String })
-  findByUserId(@Param('userId') userId: string) {
-    return this.serviceService.findByUserId(userId);
   }
 
   @Patch(':id')
@@ -54,12 +54,5 @@ export class ServiceController {
   @ApiResponse({ status: 200, type: Service })
   remove(@Param('id') id: string) {
     return this.serviceService.remove(id);
-  }
-
-  @Get('priority/:priority')
-  @ApiResponse({ status: 200, type: [Service] })
-  async findWithPriority(@Param('priority') priority: number) {
-    const services = await this.serviceService.findAll();
-    return services.data.filter((service) => service.priority == priority);
   }
 }

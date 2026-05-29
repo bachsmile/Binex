@@ -4,9 +4,14 @@
 export interface TransferDto {
 
   /**
+   * example: 0xB...admin
+   */
+  from?: string;
+
+  /**
    * example: 0xB...vnd
    */
-  toAddress: string;
+  to: string;
 
   /**
    * example: 50000

@@ -12,7 +12,7 @@ import { User } from '../../user/entities/user.entity';
 
 @Entity('file_asset')
 export class FileAsset {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -37,7 +37,7 @@ export class FileAsset {
   @Column()
   url: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'char', length: 26, nullable: true })
   userId: string;
 
   @Column({ default: 'other' })

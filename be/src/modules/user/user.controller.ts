@@ -12,8 +12,8 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { ExtendPermissionDto } from './dto/extend-permission.dto';
+import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { ExtendSubscriptionDto } from './dto/extend-subscription.dto';
 import { ChangePackageDto } from './dto/change-package.dto';
 import { UpdateUserRecordLimitDto } from './dto/update-record-limit.dto';
 import { UseGuards } from '@nestjs/common';
@@ -39,36 +39,36 @@ import {
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Patch(':id/permissions')
+  @Patch(':id/subscriptions')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Cập nhật danh sách quyền của người dùng' })
-  updatePermissions(
+  @ApiOperation({ summary: 'Cập nhật danh sách đăng ký của người dùng' })
+  updateSubscriptions(
     @Param('id') id: string,
-    @Body() updatePermissionDto: UpdatePermissionDto,
+    @Body() updateSubscriptionDto: UpdateSubscriptionDto,
   ) {
-    return this.userService.updatePermissions(id, updatePermissionDto);
+    return this.userService.updateSubscriptions(id, updateSubscriptionDto);
   }
 
-  @Patch('permission/:id/extend')
+  @Patch('subscription/:id/extend')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Gia hạn quyền của người dùng' })
+  @ApiOperation({ summary: 'Gia hạn gói dịch vụ của người dùng' })
   @ApiParam({
     name: 'id',
-    description: 'ID của quyền (UserPermission) cần gia hạn',
+    description: 'ID của gói đăng ký (UserSubscription) cần gia hạn',
   })
-  extendPermission(
+  extendSubscription(
     @Param('id') id: string,
-    @Body() extendPermissionDto: ExtendPermissionDto,
+    @Body() extendSubscriptionDto: ExtendSubscriptionDto,
   ) {
-    return this.userService.extendPermission(id, extendPermissionDto.days);
+    return this.userService.extendSubscription(id, extendSubscriptionDto.days);
   }
 
-  @Patch('permission/:id/change-package')
+  @Patch('subscription/:id/change-package')
   @Roles(Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Đổi gói dịch vụ của người dùng' })
   @ApiParam({
     name: 'id',
-    description: 'ID của quyền (UserPermission) cần đổi gói',
+    description: 'ID của gói đăng ký (UserSubscription) cần đổi gói',
   })
   changePackage(
     @Param('id') id: string,
@@ -77,11 +77,11 @@ export class UserController {
     return this.userService.changePackage(id, changePackageDto.newPackageId);
   }
 
-  @Get(':userId/permissions')
+  @Get(':userId/subscriptions')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Lấy danh sách quyền của người dùng' })
-  getUserPermissions(@Param('userId') userId: string) {
-    return this.userService.getUserPermissions(userId);
+  @ApiOperation({ summary: 'Lấy danh sách gói đăng ký của người dùng' })
+  getUserSubscriptions(@Param('userId') userId: string) {
+    return this.userService.getUserSubscriptions(userId);
   }
 
   @Post('clear-except-users')

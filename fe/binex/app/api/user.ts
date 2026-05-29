@@ -6,17 +6,17 @@ import type { CreateUserDto } from '~/types/payload/create-user';
 export const useUserApi = () => {
   const api = useApi();
   return {
-    updatePermissions: (payload: any) => 
-      api.call<ApiResponse<any>, ApiError>(`/user/${payload}/permissions`, 'PATCH'),
+    updateSubscriptions: (payload: any) => 
+      api.call<ApiResponse<any>, ApiError>(`/user/${payload}/subscriptions`, 'PATCH'),
 
-    extendPermission: (payload: any) => 
-      api.call<ApiResponse<any>, ApiError>(`/user/permission/${payload}/extend`, 'PATCH'),
+    extendSubscription: (payload: any) => 
+      api.call<ApiResponse<any>, ApiError>(`/user/subscription/${payload}/extend`, 'PATCH'),
 
     changePackage: (payload: any) => 
-      api.call<ApiResponse<any>, ApiError>(`/user/permission/${payload}/change-package`, 'PATCH'),
+      api.call<ApiResponse<any>, ApiError>(`/user/subscription/${payload}/change-package`, 'PATCH'),
 
-    getUserPermissions: (payload: string) => 
-      api.call<ApiResponse<any>, ApiError>(`/user/${payload}/permissions`, 'GET'),
+    getUserSubscriptions: (payload: string) => 
+      api.call<ApiResponse<any>, ApiError>(`/user/${payload}/subscriptions`, 'GET'),
 
     clearAllExceptUsers: () => 
       api.call<ApiResponse<any>, ApiError>('/user/clear-except-users', 'POST'),

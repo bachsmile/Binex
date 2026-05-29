@@ -1,29 +1,29 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-  const token = useCookie("auth_token", { maxAge: 604800, path: '/' });
-  const role = useCookie("user_role", { maxAge: 604800, path: '/' });
+export default defineNuxtRouteMiddleware((to) => {
+  const allowedRoles = ['ad', 'sp-ad', 'ma']
+  const publicPages = ['/login', '/register']
 
-  // Define allowed roles for admin project (ad: Admin, sp-ad: Super Admin, ma: Manager)
-  const allowedRoles = ["ad", "sp-ad", "ma"];
+  // Read cookies using useCookie — fully reactive and unified for SSR and CSR
+  const token = useCookie('auth_token')
+  const role = useCookie('user_role')
 
-  // 1. Allow public pages (login, register, home for testing)
-  if (to.path === "/" || to.path === "/login" || to.path === "/register") {
-    // If already logged in with correct role and trying to access auth pages, redirect to dashboard root (/)
-    if ((to.path === "/login" || to.path === "/register") && token.value && allowedRoles.includes(role.value)) {
-      return navigateTo("/");
+  const tokenValue = token.value
+  const roleValue = role.value
+
+  // 1. Trang public (login, register)
+  if (publicPages.includes(to.path)) {
+    if (tokenValue && roleValue && allowedRoles.includes(roleValue)) {
+      return navigateTo('/')
     }
-    return;
+    return
   }
 
-  // 2. Check for token
-  if (!token.value) {
-    return navigateTo("/login");
+  // 2. Check token
+  if (!tokenValue) {
+    return navigateTo('/login')
   }
 
-  // 3. Check for roles (ad, sp-ad or ma)
-  if (!allowedRoles.includes(role.value)) {
-    // If role is not allowed, clear cookies and force login
-    token.value = null;
-    role.value = null;
-    return navigateTo("/login");
+  // 3. Check role
+  if (!roleValue || !allowedRoles.includes(roleValue)) {
+    return navigateTo('/login')
   }
-});
+})

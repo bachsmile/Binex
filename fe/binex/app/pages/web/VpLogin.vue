@@ -61,12 +61,14 @@ const handleLogin = async () => {
     
     const response = await authApi.login(payload);
     const loginData = response?.data;
-    
+    const id = useCookie('user_id', { maxAge: 604800, path: '/' });
     // Store token in cookie
     const token = useCookie('auth_token', {
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: '/'
     });
+
+    id.value = loginData.user?.id || '';
     
     if (loginData?.accessToken) {
       token.value = loginData.accessToken;

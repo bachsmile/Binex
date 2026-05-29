@@ -1,5 +1,5 @@
 /** Auto-generated response */
-
+import type { User } from './user';
 
 export interface WalletResponse {
 
@@ -24,6 +24,12 @@ export interface WalletActionResponse {
   transactionId?: string;
 
   data?: Wallet;
+
+}
+
+export interface AdminWalletResponse {
+
+  address: string;
 
 }
 
@@ -54,6 +60,8 @@ export interface Wallet {
 
   isDeleted: boolean;
 
+  isAdminWallet: boolean;
+
   pin: string;
 
   address: string;
@@ -61,6 +69,8 @@ export interface Wallet {
   privateKey: string;
 
   publicKey: string;
+
+  user: User;
 
 }
 

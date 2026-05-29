@@ -47,4 +47,9 @@ export class CreateMethodPayDto {
   @IsString()
   @IsOptional()
   status?: string;
+
+  @ApiProperty({ example: '01HJ...', required: false })
+  @IsString()
+  @IsOptional()
+  userId?: string;
 }

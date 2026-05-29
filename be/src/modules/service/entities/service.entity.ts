@@ -3,7 +3,7 @@ import { ulid } from 'ulid';
 
 @Entity('service')
 export class Service {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -16,11 +16,11 @@ export class Service {
   @Column()
   name: string;
 
+  @Column({ unique: true, nullable: true })
+  code: string;
+
   @Column()
   description: string;
-
-  @Column('text', { array: true, nullable: true })
-  packageIds: string[];
 
   @Column()
   createdAt: Date;
@@ -36,4 +36,7 @@ export class Service {
 
   @Column({ nullable: true })
   thumbnail: string;
+
+  @Column({ default: 'active' })
+  status: string;
 }

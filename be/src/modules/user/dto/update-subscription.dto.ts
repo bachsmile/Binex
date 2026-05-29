@@ -9,24 +9,16 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class PermissionItem {
-  @ApiProperty({ example: 'ser_id_123', required: false })
-  @IsString()
-  @IsOptional()
-  serId?: string;
-
-  @ApiProperty({ example: 'User' })
-  @IsString()
-  serName: string;
-
+export class SubscriptionItem {
   @ApiProperty({ example: 'pack_id_456', required: false })
   @IsString()
   @IsOptional()
   packId?: string;
 
-  @ApiProperty({ example: 'Basic' })
+  @ApiProperty({ example: 'SER_001', required: false })
   @IsString()
-  packName: string;
+  @IsOptional()
+  serviceId?: string;
 
   @ApiProperty({
     example: 15,
@@ -41,13 +33,13 @@ export class PermissionItem {
   expiredAt?: string;
 }
 
-export class UpdatePermissionDto {
+export class UpdateSubscriptionDto {
   @ApiProperty({
-    type: [PermissionItem],
-    description: 'Danh sách các quyền của người dùng',
+    type: [SubscriptionItem],
+    description: 'Danh sách đăng ký gói dịch vụ của người dùng',
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => PermissionItem)
-  permissions: PermissionItem[];
+  @Type(() => SubscriptionItem)
+  subscriptions: SubscriptionItem[];
 }

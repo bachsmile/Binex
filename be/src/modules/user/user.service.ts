@@ -3,10 +3,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository, Raw, ILike, DataSource } from 'typeorm';
+import { Repository, Raw, ILike, DataSource, In } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { UserPermission } from './entities/user-permission.entity';
-import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { UserSubscription } from './entities/user-subscription.entity';
+import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { Service } from '../service/entities/service.entity';
 import { Package } from '../service/entities/package.entity';
 import { Role } from '../auth/enums/role.enum';
@@ -17,8 +17,8 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(UserPermission)
-    private permissionRepository: Repository<UserPermission>,
+    @InjectRepository(UserSubscription)
+    private subscriptionRepository: Repository<UserSubscription>,
     @InjectRepository(Service)
     private serviceRepository: Repository<Service>,
     @InjectRepository(Package)
@@ -39,67 +39,119 @@ export class UserService {
     return null;
   }
 
-  async updatePermissions(
+  async updateSubscriptions(
     userId: string,
-    updatePermissionDto: UpdatePermissionDto,
+    updateSubscriptionDto: UpdateSubscriptionDto,
   ) {
-    // 1. Delete existing permissions
-    await this.permissionRepository.delete({ userId });
+    // 1. Delete existing subscriptions
+    await this.subscriptionRepository.delete({ userId });
 
-    // 2. Create new permissions
-    const permissions = updatePermissionDto.permissions.map((p) => {
-      return this.permissionRepository.create({
+    // 2. Create new subscriptions directly from DTO
+    const subscriptions = updateSubscriptionDto.subscriptions.map((s) => {
+      return this.subscriptionRepository.create({
         userId,
-        serId: p.serId,
-        serName: p.serName,
-        packId: p.packId,
-        packName: p.packName,
-        ac: p.ac,
-        expiredAt: p.expiredAt ? new Date(p.expiredAt) : undefined,
+        packId: s.packId,
+        serviceGroupId: s.serviceId,
+        ac: s.ac,
+        expiredAt: s.expiredAt ? new Date(s.expiredAt) : undefined,
       });
     });
 
     // 3. Save to database
-    return await this.permissionRepository.save(permissions);
+    return await this.subscriptionRepository.save(subscriptions);
   }
 
-  async findLatestPermissionByUserId(
+  async activatePackage(
     userId: string,
-  ): Promise<UserPermission | null> {
-    return await this.permissionRepository.findOne({
+    packageId: string,
+    serviceId?: string,
+    ac?: number,
+  ): Promise<UserSubscription> {
+    const pkg = await this.packageRepository.findOne({
+      where: { id: packageId },
+    });
+    if (!pkg) {
+      throw new BadRequestException('Gói dịch vụ không tồn tại');
+    }
+
+    const now = new Date();
+    const resolvedServiceId = serviceId || 'SER_001';
+    const resolvedAc = ac || 15;
+
+    // 1. Tìm subscription hiện tại của user cho service này trực tiếp theo serviceId
+    let subscription = await this.subscriptionRepository.findOne({
+      where: { userId, serviceGroupId: resolvedServiceId },
+    });
+
+    if (subscription) {
+      // Gia hạn hoặc cập nhật subscription hiện tại
+      const newExpiredAt = new Date();
+      if (subscription.expiredAt && subscription.expiredAt > now) {
+        newExpiredAt.setTime(
+          subscription.expiredAt.getTime() + pkg.expire * 24 * 60 * 60 * 1000,
+        );
+      } else {
+        newExpiredAt.setTime(now.getTime() + pkg.expire * 24 * 60 * 60 * 1000);
+      }
+      subscription.packId = pkg.id;
+      subscription.serviceGroupId = resolvedServiceId;
+      subscription.ac = resolvedAc;
+      subscription.expiredAt = newExpiredAt;
+      subscription.updatedAt = now;
+    } else {
+      // Tạo mới subscription
+      const expiredAt = new Date();
+      expiredAt.setTime(now.getTime() + pkg.expire * 24 * 60 * 60 * 1000);
+
+      subscription = this.subscriptionRepository.create({
+        userId,
+        packId: pkg.id,
+        serviceGroupId: resolvedServiceId,
+        ac: resolvedAc,
+        expiredAt,
+      });
+    }
+
+    return await this.subscriptionRepository.save(subscription);
+  }
+
+  async findLatestSubscriptionByUserId(
+    userId: string,
+  ): Promise<UserSubscription | null> {
+    return await this.subscriptionRepository.findOne({
       where: { userId },
       order: { expiredAt: 'DESC' },
     });
   }
 
-  async extendPermission(permissionId: string, days: number) {
-    const permission = await this.permissionRepository.findOne({
-      where: { id: permissionId },
+  async extendSubscription(subscriptionId: string, days: number) {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { id: subscriptionId },
     });
 
-    if (!permission) {
-      throw new Error('Permission record not found');
+    if (!subscription) {
+      throw new Error('Subscription record not found');
     }
 
-    const currentExpiry = permission.expiredAt
-      ? new Date(permission.expiredAt)
+    const currentExpiry = subscription.expiredAt
+      ? new Date(subscription.expiredAt)
       : new Date();
 
     // Add days to current expiry
     currentExpiry.setDate(currentExpiry.getDate() + days);
 
-    permission.expiredAt = currentExpiry;
-    permission.updatedAt = new Date();
+    subscription.expiredAt = currentExpiry;
+    subscription.updatedAt = new Date();
 
-    return await this.permissionRepository.save(permission);
+    return await this.subscriptionRepository.save(subscription);
   }
 
-  async changePackage(permissionId: string, newPackageId: string) {
-    const permission = await this.permissionRepository.findOne({
-      where: { id: permissionId },
+  async changePackage(subscriptionId: string, newPackageId: string) {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { id: subscriptionId },
     });
-    if (!permission) {
-      throw new BadRequestException('Không tìm thấy bản ghi quyền hạn');
+    if (!subscription) {
+      throw new BadRequestException('Không tìm thấy bản ghi đăng ký gói');
     }
 
     const newPackage = await this.packageRepository.findOne({
@@ -115,22 +167,15 @@ export class UserService {
     }
 
     const oldPackage = await this.packageRepository.findOne({
-      where: { id: permission.packId },
+      where: { id: subscription.packId },
     });
-
-    // Kiểm tra: Gói mới phải trùng serviceId với bản ghi hiện tại
-    if (permission.serId && newPackage.serviceId !== permission.serId) {
-      throw new BadRequestException(
-        'Gói mới phải thuộc cùng một dịch vụ (Service)',
-      );
-    }
 
     const now = new Date();
     let newExpiredAt = new Date();
 
-    if (permission.expiredAt && permission.expiredAt > now && oldPackage) {
+    if (subscription.expiredAt && subscription.expiredAt > now && oldPackage) {
       // 1. Tính giá trị còn lại của gói cũ (Value = RemainingDays * PricePerDay)
-      const remainingMs = permission.expiredAt.getTime() - now.getTime();
+      const remainingMs = subscription.expiredAt.getTime() - now.getTime();
       const remainingDays = remainingMs / (1000 * 60 * 60 * 24);
 
       const oldPrice = parseFloat(oldPackage.price) || 0;
@@ -148,42 +193,40 @@ export class UserService {
         const addedDays = remainingValue / newPricePerDay;
         newExpiredAt.setTime(now.getTime() + addedDays * (1000 * 60 * 60 * 24));
       } else {
-        // Nếu gói mới miễn phí hoặc lỗi giá, giữ nguyên thời hạn cũ?
-        // Thường thì gói mới sẽ có thời hạn riêng, nhưng theo yêu cầu là quy đổi.
-        newExpiredAt = permission.expiredAt;
+        newExpiredAt = subscription.expiredAt;
       }
     } else {
       // Nếu không có thời gian còn lại, mặc định là hết hạn ngay (chờ nạp gói mới)
       newExpiredAt = now;
     }
 
-    // 3. Cập nhật thông tin quyền hạn theo gói mới
-    permission.packId = newPackage.id;
-    permission.packName = newPackage.name;
-    permission.ac = newPackage.ser; // Cập nhật Action bits từ gói mới
-    permission.expiredAt = newExpiredAt;
-    permission.updatedAt = now;
+    // 3. Cập nhật thông tin đăng ký theo gói mới
+    subscription.packId = newPackage.id;
+    subscription.ac = subscription.ac || 15; // Preserve existing ac or fallback to 15
+    subscription.expiredAt = newExpiredAt;
+    subscription.updatedAt = now;
 
-    return await this.permissionRepository.save(permission);
+    return await this.subscriptionRepository.save(subscription);
   }
 
-  async getUserPermissions(userId: string) {
+  async getUserSubscriptions(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
     }
-    const permissions = await this.permissionRepository.find({
+    const subscriptions = await this.subscriptionRepository.find({
       where: { userId },
     });
-    return permissions;
+    return subscriptions;
   }
 
   async create(createUserDto: CreateUserDto, creatorId?: string) {
     // 1. Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
     // 2. Xác định Role dựa trên secret code
     let role = Role.USER;
+    console.log(createUserDto.code);
+
     if (createUserDto.code === '753951') {
       role = Role.SUPER_ADMIN;
     }
@@ -232,7 +275,7 @@ export class UserService {
     if (role) where.role = role;
     return await this.userRepository.find({
       where,
-      relations: ['userPermissions'],
+      relations: ['userSubscriptions'],
     });
   }
 
@@ -250,7 +293,7 @@ export class UserService {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['userPermissions'],
+      relations: ['userSubscriptions'],
       order: { createdAt: 'DESC' },
     });
     return {
@@ -280,7 +323,7 @@ export class UserService {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['userPermissions'],
+      relations: ['userSubscriptions'],
       order: { createdAt: 'DESC' },
     });
     return {
@@ -292,7 +335,7 @@ export class UserService {
   async findOne(id: string) {
     return this.userRepository.findOne({
       where: { id },
-      relations: ['userPermissions'],
+      relations: ['userSubscriptions'],
     });
   }
 
@@ -321,16 +364,16 @@ export class UserService {
     }
 
     const now = new Date();
-    const permissions = await this.permissionRepository.find({
+    const subscriptions = await this.subscriptionRepository.find({
       where: { userId },
     });
 
-    const activePermissions = permissions.filter(
-      (p) => !p.expiredAt || p.expiredAt > now,
+    const activeSubscriptions = subscriptions.filter(
+      (s) => !s.expiredAt || s.expiredAt > now,
     );
 
     let totalLimit = 0;
-    for (const p of activePermissions) {
+    for (const p of activeSubscriptions) {
       if (p.packId) {
         const pkg = await this.packageRepository.findOne({
           where: { id: p.packId },
@@ -374,18 +417,18 @@ export class UserService {
     }
 
     const now = new Date();
-    const permissions = await this.permissionRepository.find({
+    const subscriptions = await this.subscriptionRepository.find({
       where: { userId },
     });
 
-    const activePermissions = permissions.filter(
-      (p) => !p.expiredAt || p.expiredAt > now,
+    const activeSubscriptions = subscriptions.filter(
+      (s) => !s.expiredAt || s.expiredAt > now,
     );
 
     let totalLimit = 0;
     let isUnlimited = false;
 
-    for (const p of activePermissions) {
+    for (const p of activeSubscriptions) {
       if (p.packId) {
         const pkg = await this.packageRepository.findOne({
           where: { id: p.packId },

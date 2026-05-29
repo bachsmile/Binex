@@ -4,15 +4,18 @@ import { ethers } from 'ethers';
 import { CryptoPayDto } from './dto/pay/crypto-pay.dto';
 import { ManualPayDto } from './dto/pay/manual-pay.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  PaymentRequest,
-  PaymentRequestStatus,
-} from './entities/payment-request.entity';
+import { Payment, PaymentRequestStatus } from './entities/payment.entity';
 import { MethodPay } from './entities/method-pay.entity';
+import {
+  Order,
+  PaymentStatus as OrderPaymentStatus,
+} from '../order/entities/order.entity';
 import { Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { OrderType } from './enums/order-type.enum';
+import { WalletService } from '../wallet/wallet.service';
+import { PayPackageDto } from './dto/pay/pay-package.dto';
 
 @Injectable()
 export class PayService {
@@ -22,12 +25,15 @@ export class PayService {
 
   constructor(
     private configService: ConfigService,
-    @InjectRepository(PaymentRequest)
-    private readonly paymentRequestRepository: Repository<PaymentRequest>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(MethodPay)
     private readonly methodPayRepository: Repository<MethodPay>,
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
     private readonly mailService: MailService,
     private readonly userService: UserService,
+    private readonly walletService: WalletService,
   ) {
     const rpcUrl =
       this.configService.get<string>('PLASMA_RPC_URL') ||
@@ -227,12 +233,12 @@ export class PayService {
     this.logger.log(
       `New manual payment submission for type: ${manualPayDto.orderType} (PK: ${manualPayDto.packageId}, SER: ${manualPayDto.serviceId})`,
     );
-    const newRequest = this.paymentRequestRepository.create({
+    const newRequest = this.paymentRepository.create({
       ...manualPayDto,
       userId,
       status: PaymentRequestStatus.PENDING,
     });
-    return await this.paymentRequestRepository.save(newRequest);
+    return await this.paymentRepository.save(newRequest);
   }
 
   /**
@@ -243,18 +249,18 @@ export class PayService {
     status: PaymentRequestStatus,
     adminNote?: string,
   ) {
-    const request = await this.paymentRequestRepository.findOne({
+    const request = await this.paymentRepository.findOne({
       where: { id: requestId },
     });
     if (!request) {
-      throw new Error('Payment request not found');
+      throw new Error('Payment not found');
     }
 
     request.status = status;
     request.adminNote = adminNote;
     request.updatedAt = new Date();
 
-    const savedRequest = await this.paymentRequestRepository.save(request);
+    const savedRequest = await this.paymentRepository.save(request);
 
     if (status === PaymentRequestStatus.APPROVED) {
       this.logger.log(
@@ -277,12 +283,11 @@ export class PayService {
 
       // Logic gia hạn gói (RN_AC_PK)
       if (request.orderType === OrderType.RN_AC_PK && request.userId) {
-        const permission = await this.userService.findLatestPermissionByUserId(
-          request.userId,
-        );
+        const subscription =
+          await this.userService.findLatestSubscriptionByUserId(request.userId);
         const user = await this.userService.findOne(request.userId);
 
-        if (permission && user) {
+        if (subscription && user) {
           let daysToExtend = 30; // Mặc định 30 ngày
 
           if (request.packageId) {
@@ -294,8 +299,8 @@ export class PayService {
             }
           }
 
-          const updatedPermission = await this.userService.extendPermission(
-            permission.id,
+          const updatedSubscription = await this.userService.extendSubscription(
+            subscription.id,
             daysToExtend,
           );
 
@@ -303,11 +308,11 @@ export class PayService {
           await this.mailService.sendPermissionExtendedEmail(
             user.email,
             user.userName,
-            updatedPermission.expiredAt,
+            updatedSubscription.expiredAt,
           );
 
           this.logger.log(
-            `Permission for user ${user.userName} extended by ${daysToExtend} days.`,
+            `Subscription for user ${user.userName} extended by ${daysToExtend} days.`,
           );
         }
       }
@@ -321,16 +326,106 @@ export class PayService {
    */
   async getPaymentRequests(
     status?: PaymentRequestStatus,
+    serviceId?: string,
     page: number = 1,
     limit: number = 10,
   ) {
-    const [data, total] = await this.paymentRequestRepository.findAndCount({
-      where: status ? { status } : {},
+    const [data, total] = await this.paymentRepository.findAndCount({
+      where: {
+        ...(status ? { status } : {}),
+        ...(serviceId ? { serviceGroupId: serviceId } : {}),
+      },
       relations: ['methodPay'],
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
     });
     return { data, total };
+  }
+
+  /**
+   * Thanh toán gói dịch vụ bằng ví Binex
+   */
+  async payWalletPackage(payPackageDto: PayPackageDto, userId: string) {
+    // 1. Lấy địa chỉ ví Super Admin nhận tiền
+    const adminAddress = await this.walletService.getAdminWallet();
+    if (!adminAddress) {
+      throw new BadRequestException(
+        'Không tìm thấy địa chỉ ví Super Admin nhận thanh toán.',
+      );
+    }
+
+    // 2. Chuyển tiền từ ví cá nhân sang ví admin
+    const transferRes = await this.walletService.transfer(
+      payPackageDto.fromAddress,
+      adminAddress,
+      payPackageDto.amount,
+      'VND',
+      userId,
+      false, // Không cho phép sử dụng ví của người khác trừ phi là admin
+    );
+
+    if (!transferRes || !transferRes.success) {
+      throw new BadRequestException(
+        'Chuyển tiền thất bại hoặc số dư không đủ.',
+      );
+    }
+
+    const transactionId =
+      transferRes.transactionId ||
+      `TX_${Date.now().toString(36).toUpperCase()}`;
+
+    // 3. Thực hiện kích hoạt gói dịch vụ & update quyền người dùng theo gói luôn
+    const permission = await this.userService.activatePackage(
+      userId,
+      payPackageDto.packageId,
+      payPackageDto.serviceId,
+    );
+
+    // 4. Tạo 1 lưu trữ (bảng payment) lưu trữ lịch sử thanh toán đã duyệt (APPROVED)
+    let methodPay = await this.methodPayRepository.findOne({
+      where: { type: 'binex' as any },
+    });
+
+    if (!methodPay) {
+      methodPay = await this.methodPayRepository.findOne({ where: {} });
+    }
+
+    const payment = this.paymentRepository.create({
+      packageId: payPackageDto.packageId,
+      serviceGroupId: payPackageDto.serviceId || 'SER_001',
+      orderType: OrderType.CR_OD_PK,
+      userId,
+      methodPayId: methodPay?.id || 'BINEX_WALLET',
+      amount: payPackageDto.amount,
+      transactionCode: transactionId,
+      status: PaymentRequestStatus.APPROVED,
+      adminNote: 'Đã thanh toán tự động qua Ví Binex',
+    });
+
+    const savedPayment = await this.paymentRepository.save(payment);
+
+    // 5. Tạo 1 lưu trữ mua hàng order
+    const order = this.orderRepository.create({
+      userId,
+      packageId: payPackageDto.packageId,
+      serviceGroupId: payPackageDto.serviceId || 'SER_001',
+      amount: payPackageDto.amount,
+      currency: 'VND',
+      paymentStatus: OrderPaymentStatus.PAID,
+      transactionId: transactionId,
+      orderType: OrderType.CR_OD_PK,
+    });
+
+    const savedOrder = await this.orderRepository.save(order);
+
+    return {
+      success: true,
+      message: 'Thanh toán và kích hoạt gói thành công!',
+      transactionId,
+      payment: savedPayment,
+      order: savedOrder,
+      permission,
+    };
   }
 }

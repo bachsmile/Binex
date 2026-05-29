@@ -13,7 +13,7 @@ import { Wedding } from './wedding.entity';
 
 @Entity('wd_card')
 export class WdCard {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()

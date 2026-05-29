@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { usePayApi } from '~/api/pay'
 import { useWalletApi } from '~/api/wallet'
+import { useOrderApi } from '~/api/order'
 import mascotLogin from '/img/mascot_login.png'
 
 const { isOpen, currentStep, selectedPackage, nextStep, prevStep, close } = usePackageModal();
 const payApi = usePayApi();
 const walletApi = useWalletApi();
+const orderApi = useOrderApi();
 const { user, hasWallet, openCreateWalletModal, openDepositModal } = useUser();
 
 const selectedMethod = ref('binex');
@@ -14,13 +16,19 @@ const isSuccess = ref(true);
 const orderCode = ref('');
 const walletData = ref<any>(null);
 const isFetchingWallet = ref(false);
+const showConfirmPayment = ref(false);
+
+const isEnoughBalance = computed(() => {
+  if (!walletData.value || !invoice.value) return false;
+  return (walletData.value.balance?.VND || 0) >= (invoice.value.total || 0);
+});
 
 const fetchWallet = async () => {
   if (!hasWallet.value) return;
   isFetchingWallet.value = true;
-  const res = await walletApi.findAll();
+  const res = await walletApi.findMine();
   
-  if (res.statusCode === 200 && res.data) {
+  if (res.status && res.data) {
     walletData.value = Array.isArray(res.data) ? res.data[0] : res.data;
   }
   isFetchingWallet.value = false;
@@ -33,6 +41,8 @@ watch(isOpen, (val) => {
     if (selectedMethod.value === 'binex' && hasWallet.value) {
       fetchWallet();
     }
+  } else {
+    showConfirmPayment.value = false;
   }
 });
 
@@ -66,9 +76,17 @@ const handlePayment = async () => {
   if (!selectedPackage.value) return;
 
   // Kiểm tra ví nếu dùng phương thức Ví Binex
-  if (selectedMethod.value === 'binex' && !hasWallet.value) {
-    openCreateWalletModal();
-    return;
+  if (selectedMethod.value === 'binex') {
+    if (!hasWallet.value) {
+      openCreateWalletModal();
+      return;
+    }
+    
+    if (isEnoughBalance.value) {
+      // Mở giao diện xác nhận thanh toán chứ không phải nạp tiền
+      showConfirmPayment.value = true;
+      return;
+    }
   }
   
   isProcessing.value = true;
@@ -90,6 +108,43 @@ const handlePayment = async () => {
   } finally {
     isProcessing.value = false;
     // Không tự động gọi nextStep() ở đây vì đã chuyển sang Modal nạp tiền
+  }
+};
+
+const confirmWalletPayment = async () => {
+  if (!selectedPackage.value || !walletData.value) return;
+  
+  isProcessing.value = true;
+  
+  try {
+    // Gọi API pay package trực tiếp từ backend
+    const res = await payApi.payWalletPackage({
+      packageId: selectedPackage.value.id,
+      serviceId: selectedPackage.value.serviceId || 'SER_001',
+      amount: invoice.value?.total || 0,
+      fromAddress: walletData.value.address,
+    });
+
+    if (res && res.status && res.data) {
+      // Thành công: Sử dụng ID payment-request làm mã đơn hàng để hiển thị
+      orderCode.value = res.data.paymentRequest?.id || res.data.transactionId || `TX_${Date.now().toString(36).toUpperCase()}`;
+      
+      isSuccess.value = true;
+      showConfirmPayment.value = false;
+      
+      // Chuyển sang bước 4 hoàn tất thành công
+      currentStep.value = 4;
+    } else {
+      throw new Error(res?.message || 'Giao dịch thanh toán bằng ví thất bại.');
+    }
+  } catch (err: any) {
+    console.error('Lỗi thanh toán bằng ví:', err);
+
+    isSuccess.value = false;
+    showConfirmPayment.value = false;
+    currentStep.value = 4; // Vẫn chuyển qua bước 4 để hiển thị trạng thái thất bại
+  } finally {
+    isProcessing.value = false;
   }
 };
 </script>
@@ -217,50 +272,105 @@ const handlePayment = async () => {
 
             <!-- STEP 3: Payment Method Selection -->
             <div v-if="currentStep === 3" class="flex-1 flex flex-col">
-              <div class="mb-8">
-                <h2 class="text-3xl font-black uppercase tracking-tighter text-white mb-2">Thanh toán</h2>
-                <p class="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Chọn phương thức thanh toán của bạn</p>
-              </div>
+              <template v-if="!showConfirmPayment">
+                <div class="mb-8">
+                  <h2 class="text-3xl font-black uppercase tracking-tighter text-white mb-2">Thanh toán</h2>
+                  <p class="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Chọn phương thức thanh toán của bạn</p>
+                </div>
 
-              <div class="space-y-3 mb-8">
-                <button v-for="m in paymentMethods" :key="m.id"
-                        @click="selectedMethod = m.id"
-                        class="w-full p-5 rounded-2xl border transition-all flex items-center justify-between group"
-                        :class="selectedMethod === m.id ? 'bg-[#CCFF00]/10 border-[#CCFF00]' : 'bg-white/[0.03] border-white/5 hover:border-white/10'">
-                  <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-colors"
-                         :class="selectedMethod === m.id ? 'bg-[#CCFF00] text-black' : 'bg-white/5 text-white/40 group-hover:text-white'">
-                      <Icon :name="m.icon" />
-                    </div>
-                    <div class="text-left">
-                      <div class="flex items-center gap-2">
-                        <h4 class="text-white font-bold text-sm uppercase tracking-tight">{{ m.name }}</h4>
-                        <span v-if="m.id === 'binex'" class="px-2 py-0.5 bg-[#CCFF00] text-black text-[7px] font-black rounded-full animate-pulse">VIP</span>
+                <div class="space-y-3 mb-8">
+                  <button v-for="m in paymentMethods" :key="m.id"
+                          @click="selectedMethod = m.id"
+                          class="w-full p-5 rounded-2xl border transition-all flex items-center justify-between group"
+                          :class="selectedMethod === m.id ? 'bg-[#CCFF00]/10 border-[#CCFF00]' : 'bg-white/[0.03] border-white/5 hover:border-white/10'">
+                    <div class="flex items-center gap-4">
+                      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-colors"
+                           :class="selectedMethod === m.id ? 'bg-[#CCFF00] text-black' : 'bg-white/5 text-white/40 group-hover:text-white'">
+                        <Icon :name="m.icon" />
                       </div>
-                      
-                      <!-- Wallet Balance Display -->
-                      <div v-if="m.id === 'binex' && walletData" class="mt-1">
-                        <p class="text-[10px] font-black uppercase tracking-widest transition-colors"
-                           :class="(walletData.balance?.VND || 0) < (invoice?.total || 0) ? 'text-red-500' : 'text-[#CCFF00]'">
-                          Số dư: {{ (walletData.balance?.VND || 0).toLocaleString() }}đ
-                          <span v-if="(walletData.balance?.VND || 0) < (invoice?.total || 0)" class="ml-2">(Không đủ số dư)</span>
-                        </p>
+                      <div class="text-left">
+                        <div class="flex items-center gap-2">
+                          <h4 class="text-white font-bold text-sm uppercase tracking-tight">{{ m.name }}</h4>
+                          <span v-if="m.id === 'binex'" class="px-2 py-0.5 bg-[#CCFF00] text-black text-[7px] font-black rounded-full animate-pulse">VIP</span>
+                        </div>
+                        
+                        <!-- Wallet Balance Display -->
+                        <div v-if="m.id === 'binex' && walletData" class="mt-1">
+                          <p class="text-[10px] font-black uppercase tracking-widest transition-colors"
+                             :class="(walletData.balance?.VND || 0) < (invoice?.total || 0) ? 'text-red-500' : 'text-[#CCFF00]'">
+                            Số dư: {{ (walletData.balance?.VND || 0).toLocaleString() }}đ
+                            <span v-if="(walletData.balance?.VND || 0) < (invoice?.total || 0)" class="ml-2">(Không đủ số dư)</span>
+                          </p>
+                        </div>
+                        <p v-else class="text-white/20 text-[9px] uppercase tracking-widest">Giao dịch an toàn & bảo mật</p>
                       </div>
-                      <p v-else class="text-white/20 text-[9px] uppercase tracking-widest">Giao dịch an toàn & bảo mật</p>
                     </div>
-                  </div>
-                  <div v-if="selectedMethod === m.id" class="w-6 h-6 rounded-full bg-[#CCFF00] flex items-center justify-center">
-                    <Icon name="ph:check-bold" class="text-black" />
-                  </div>
+                    <div v-if="selectedMethod === m.id" class="w-6 h-6 rounded-full bg-[#CCFF00] flex items-center justify-center">
+                      <Icon name="ph:check-bold" class="text-black" />
+                    </div>
+                  </button>
+                </div>
+
+                <button @click="handlePayment" 
+                        :disabled="isProcessing"
+                        class="mt-auto w-full py-4 bg-[#CCFF00] text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                  <Icon v-if="isProcessing" name="ph:circle-notch-bold" class="animate-spin text-xl" />
+                  {{ isProcessing ? 'Đang xử lý giao dịch...' : 'Thanh toán ngay' }}
                 </button>
-              </div>
+              </template>
 
-              <button @click="handlePayment" 
-                      :disabled="isProcessing"
-                      class="mt-auto w-full py-4 bg-[#CCFF00] text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
-                <Icon v-if="isProcessing" name="ph:circle-notch-bold" class="animate-spin text-xl" />
-                {{ isProcessing ? 'Đang xử lý giao dịch...' : 'Thanh toán ngay' }}
-              </button>
+              <template v-else>
+                <div class="mb-8">
+                  <h2 class="text-3xl font-black uppercase tracking-tighter text-white mb-2">Xác nhận thanh toán</h2>
+                  <p class="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Vui lòng kiểm tra thông tin ví Binex trước khi xác nhận</p>
+                </div>
+
+                <div class="space-y-4 mb-8">
+                  <!-- Package Info Card -->
+                  <div class="p-6 bg-white/[0.03] border border-white/5 rounded-3xl">
+                    <span class="text-white/20 text-[8px] font-black uppercase tracking-[0.3em]">Gói dịch vụ</span>
+                    <h3 class="text-[#CCFF00] text-xl font-black uppercase tracking-tighter mt-1">{{ selectedPackage.name }}</h3>
+                    <p class="text-white/40 text-[10px] uppercase tracking-widest mt-1">Thời hạn: {{ selectedPackage.expire }} ngày</p>
+                  </div>
+
+                  <!-- Wallet & Cost breakdown -->
+                  <div class="p-6 bg-white/[0.03] border border-white/5 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center text-white/40 text-xs font-bold uppercase tracking-widest">
+                      <span>Ví thanh toán:</span>
+                      <span class="text-white font-black">{{ walletData?.address?.slice(0, 8) }}...{{ walletData?.address?.slice(-8) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-white/40 text-xs font-bold uppercase tracking-widest">
+                      <span>Số dư hiện tại:</span>
+                      <span class="text-[#CCFF00] font-black">{{ (walletData?.balance?.VND || 0).toLocaleString() }}đ</span>
+                    </div>
+                    <div class="flex justify-between items-center text-white/40 text-xs font-bold uppercase tracking-widest">
+                      <span>Tổng thanh toán:</span>
+                      <span class="text-red-500 font-black">-{{ (invoice?.total || 0).toLocaleString() }}đ</span>
+                    </div>
+                    <div class="h-px bg-white/10 my-2"></div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-white/40 text-xs font-bold uppercase tracking-widest">Số dư còn lại:</span>
+                      <span class="text-green-500 font-black text-lg">
+                        {{ ((walletData?.balance?.VND || 0) - (invoice?.total || 0)).toLocaleString() }}đ
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex gap-4 mt-auto">
+                  <button @click="showConfirmPayment = false" 
+                          :disabled="isProcessing"
+                          class="flex-1 py-4 border border-white/10 text-white/40 font-black uppercase tracking-widest text-[10px] rounded-xl hover:text-white transition-all">
+                    Quay lại
+                  </button>
+                  <button @click="confirmWalletPayment" 
+                          :disabled="isProcessing"
+                          class="flex-[2] py-4 bg-[#CCFF00] text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                    <Icon v-if="isProcessing" name="ph:circle-notch-bold" class="animate-spin text-xl" />
+                    {{ isProcessing ? 'Đang thực hiện giao dịch...' : 'Xác nhận thanh toán' }}
+                  </button>
+                </div>
+              </template>
             </div>
 
             <!-- STEP 4: Success/Failure Status -->

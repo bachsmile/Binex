@@ -44,6 +44,9 @@ const handleSidebarCollapse = (collapsed: boolean) => {
 
         <!-- Right: Actions / Settings / Theme toggle / Profile -->
         <div class="flex items-center gap-4">
+          <!-- Wallet Button -->
+          <CpNavbarWallet />
+
           <!-- Notification Button -->
           <button class="w-9 h-9 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-100 dark:border-zinc-850 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors relative">
             <Icon name="heroicons:bell" class="text-lg" />

@@ -1,4 +1,5 @@
 /** Auto-generated response */
+import type { User } from './user';
 import type { MethodPayType } from '../enums/method-pay';
 
 export interface MethodPay {
@@ -25,6 +26,8 @@ export interface MethodPay {
   status: string;
 
   userId: string;
+
+  user: User;
 
 }
 

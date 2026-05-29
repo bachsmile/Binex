@@ -3,7 +3,8 @@ import type { Wedding } from './wedding';
 import type { WdWeb } from './wd-web';
 import type { WdCard } from './wd-card';
 import type { UserStatus } from '../enums/user';
-import type { UserPermission } from './user-permission';
+import type { UserSubscription } from './user-subscription';
+import type { MethodPay } from './method-pay';
 import type { Role } from '../enums/role';
 
 export interface User {
@@ -65,18 +66,15 @@ export interface User {
 
   managerIds: string[];
 
-
-  walletIds: string[];
-
-  packageIds: string[];
-
   weddings: Wedding[];
 
   wdWebs: WdWeb[];
 
   wdCards: WdCard[];
 
-  userPermissions: UserPermission[];
+  userSubscriptions: UserSubscription[];
+
+  methodPays: MethodPay[];
 
 }
 

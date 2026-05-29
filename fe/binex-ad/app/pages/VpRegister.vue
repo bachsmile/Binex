@@ -32,32 +32,39 @@ const code = ref('');
 const loading = ref(false);
 const status = ref({ type: '', message: '' });
 
+const authApi = useAuthApi();
+
 const handleRegister = async () => {
   loading.value = true;
   status.value = { type: '', message: '' };
   
-  try {
-    // Simulated registration
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    status.value = { 
-      type: 'success', 
-      message: 'Đăng ký tài khoản thành công! Đang chuyển hướng...' 
-    };
-    
-    setTimeout(() => {
-      navigateTo('/login');
-    }, 2000);
-    
-  } catch (err) {
-    console.error('Registration error:', err);
+  const response = await authApi.register({
+    userName: userName.value,
+    password: password.value,
+    code: code.value
+  });
+  
+  loading.value = false;
+  
+  if (!response || !response.status) {
+    const errMsg = authApi.error.value?.message;
     status.value = { 
       type: 'error', 
-      message: 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.' 
+      message: Array.isArray(errMsg)
+        ? errMsg[0]
+        : (errMsg || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.') 
     };
-  } finally {
-    loading.value = false;
+    return;
   }
+  
+  status.value = { 
+    type: 'success', 
+    message: 'Đăng ký tài khoản thành công! Đang chuyển hướng...' 
+  };
+  
+  setTimeout(() => {
+    navigateTo('/login');
+  }, 2000);
 };
 </script>
 

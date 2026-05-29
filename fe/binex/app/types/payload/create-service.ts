@@ -9,6 +9,11 @@ export interface CreateServiceDto {
   name: string;
 
   /**
+   * example: WEDDING
+   */
+  code?: string;
+
+  /**
    * example: Wedding services including cards and web
    */
   description: string;
@@ -33,12 +38,15 @@ export interface CreateServiceDto {
    */
   updatedAt?: string;
 
-  packageIds?: string[];
-
   /**
    * example: https://example.com/thumbnail.png
    */
   thumbnail?: string;
+
+  /**
+   * example: active
+   */
+  status?: string;
 
 }
 

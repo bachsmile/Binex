@@ -90,7 +90,7 @@ const handleCreateUser = async () => {
     } else {
       const errMsg = userApi.error.value?.message;
       createError.value = Array.isArray(errMsg)
-        ? errMsg[0]
+        ? (errMsg[0] || 'Tạo người dùng thất bại. Vui lòng kiểm tra lại.')
         : (errMsg || 'Tạo người dùng thất bại. Vui lòng kiểm tra lại.');
     }
   } catch (err: any) {
@@ -184,7 +184,7 @@ const tabs = [
   { id: 'banks', label: 'Phương thức thanh toán', icon: 'heroicons:credit-card' },
   { id: 'wallet', label: 'Ví tài khoản', icon: 'heroicons:wallet' },
   { id: 'transactions', label: 'Lịch sử giao dịch', icon: 'heroicons:arrow-path' }
-];
+] as const;
 
 const userBanks = ref<any[]>([]);
 const userWallets = ref<any[]>([]);
@@ -345,21 +345,21 @@ const openDetailsModal = async (user: User) => {
         <template #permissions="{ item: user }">
           <div class="flex flex-wrap gap-1.5 max-w-[200px]">
             <span 
-              v-for="perm in user.userPermissions" 
-              :key="perm.id"
+              v-for="sub in user.userSubscriptions" 
+              :key="sub.id"
               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase select-none border"
-              :class="perm.packName 
-                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-450 border-amber-100/50 dark:border-amber-900/30' 
+              :class="sub.packId 
+                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-emerald-450 border-amber-100/50 dark:border-emerald-900/30' 
                 : 'bg-primary/5 text-primary dark:bg-primary/10 border-primary/20'"
-              :title="perm.expiredAt ? `Hết hạn: ${formatDate(perm.expiredAt)}` : 'Vĩnh viễn'"
+              :title="sub.expiredAt ? `Hết hạn: ${formatDate(sub.expiredAt)}` : 'Vĩnh viễn'"
             >
-              {{ perm.packName || perm.serName || 'Quyền hạn' }}
+              {{ sub.packId || 'Đăng ký' }}
             </span>
             <span 
-              v-if="!user.userPermissions || user.userPermissions.length === 0"
+              v-if="!user.userSubscriptions || user.userSubscriptions.length === 0"
               class="text-[11px] text-zinc-400 dark:text-zinc-550 font-medium italic"
             >
-              Chưa phân quyền
+              Chưa đăng ký gói
             </span>
           </div>
         </template>
@@ -629,10 +629,10 @@ const openDetailsModal = async (user: User) => {
             <h4 class="text-xs font-black text-zinc-450 dark:text-zinc-500 uppercase tracking-wider">Nhóm quyền & Gói dịch vụ đã cấp</h4>
           </div>
 
-          <div v-if="selectedUser.userPermissions && selectedUser.userPermissions.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-if="selectedUser.userSubscriptions && selectedUser.userSubscriptions.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div 
-              v-for="perm in selectedUser.userPermissions" 
-              :key="perm.id"
+              v-for="sub in selectedUser.userSubscriptions" 
+              :key="sub.id"
               class="p-5 bg-zinc-50/50 dark:bg-zinc-900/40 border border-zinc-150/60 dark:border-zinc-800/40 rounded-2xl flex flex-col justify-between"
             >
               <div class="flex items-start justify-between">
@@ -642,9 +642,9 @@ const openDetailsModal = async (user: User) => {
                   </div>
                   <div>
                     <h4 class="text-xs font-black text-zinc-800 dark:text-zinc-100">
-                      {{ perm.packName || perm.serName || 'Quyền hạn' }}
+                      {{ sub.packId || 'Gói dịch vụ' }}
                     </h4>
-                    <p class="text-[9px] text-zinc-400 mt-0.5">Mã quyền: #{{ perm.id.slice(0, 8) }}</p>
+                    <p class="text-[9px] text-zinc-400 mt-0.5">Mã đăng ký: #{{ sub.id.slice(0, 8) }}</p>
                   </div>
                 </div>
                 <span class="text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded-full select-none font-sans uppercase">
@@ -654,14 +654,14 @@ const openDetailsModal = async (user: User) => {
               <div class="border-t border-zinc-100 dark:border-zinc-800/60 mt-4 pt-3 flex items-center justify-between text-xs">
                 <span class="text-zinc-450 font-medium">Hạn sử dụng:</span>
                 <span class="font-bold text-zinc-700 dark:text-zinc-300">
-                  {{ perm.expiredAt ? formatDate(perm.expiredAt) : 'Vĩnh viễn' }}
+                  {{ sub.expiredAt ? formatDate(sub.expiredAt) : 'Vĩnh viễn' }}
                 </span>
               </div>
             </div>
           </div>
           <div v-else class="text-center py-12 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem] select-none">
             <Icon name="heroicons:shield-exclamation" class="text-3xl text-zinc-300 dark:text-zinc-700 mb-2" />
-            <p class="text-xs text-zinc-450 dark:text-zinc-500 font-bold">Chưa cấp nhóm quyền nào</p>
+            <p class="text-xs text-zinc-450 dark:text-zinc-500 font-bold">Chưa đăng ký gói nào</p>
           </div>
         </div>
 

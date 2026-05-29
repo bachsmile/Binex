@@ -24,7 +24,7 @@ export enum GuestSide {
 
 @Entity('guest')
 export class Guest {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()

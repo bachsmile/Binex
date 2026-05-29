@@ -17,7 +17,7 @@ export enum WeddingServiceType {
 
 @Entity('wedding-package')
 export class WeddingPackage {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()

@@ -58,7 +58,3 @@ export interface PaymentRequestListResponse {
 
 }
 
-export interface Pay {
-
-}
-

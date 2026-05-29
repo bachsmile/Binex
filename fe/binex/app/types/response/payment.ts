@@ -1,16 +1,16 @@
 /** Auto-generated response */
 import type { OrderType } from '../enums/order-type';
-import type { PaymentRequestStatus } from '../enums/payment-request';
+import type { PaymentRequestStatus } from '../enums/payment';
 import type { MethodPay } from './method-pay';
 
-export interface PaymentRequest {
+export interface Payment {
 
   id: string;
 
 
   packageId?: string;
 
-  serviceId?: string;
+  serviceGroupId?: string;
 
   orderType: OrderType;
 

@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsOptional,
   IsObject,
+  IsArray,
 } from 'class-validator';
 
 export class CreatePackageDto {
@@ -13,6 +14,11 @@ export class CreatePackageDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiProperty({ example: 'PKG_BASIC', required: false })
+  @IsString()
+  @IsOptional()
+  code?: string;
 
   @ApiProperty()
   @IsString()
@@ -63,11 +69,6 @@ export class CreatePackageDto {
   recordLimit?: object;
 
   @ApiProperty()
-  @IsNumber()
-  @IsNotEmpty()
-  ser: number;
-
-  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   serviceId: string;
@@ -81,4 +82,10 @@ export class CreatePackageDto {
   @IsString()
   @IsOptional()
   createdAt: Date;
+
+  @ApiProperty({ type: [String], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  serviceIds?: string[];
 }

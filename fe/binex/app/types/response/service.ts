@@ -19,9 +19,9 @@ export interface Service {
 
   name: string;
 
-  description: string;
+  code: string;
 
-  packageIds: string[];
+  description: string;
 
   createdAt: Date;
 
@@ -32,6 +32,8 @@ export interface Service {
   icon: string;
 
   thumbnail: string;
+
+  status: string;
 
 }
 

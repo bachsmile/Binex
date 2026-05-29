@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsNotEmpty, Min } from 'class-validator';
 
-export class ExtendPermissionDto {
+export class ExtendSubscriptionDto {
   @ApiProperty({ example: 30, description: 'Số ngày muốn gia hạn' })
   @IsNumber()
   @IsNotEmpty()

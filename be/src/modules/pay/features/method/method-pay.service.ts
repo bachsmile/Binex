@@ -28,7 +28,10 @@ export class MethodPayService {
     }
   }
 
-  findAll() {
+  findAll(userId?: string) {
+    if (userId) {
+      return this.methodPayRepository.find({ where: { userId } });
+    }
     return this.methodPayRepository.find();
   }
 

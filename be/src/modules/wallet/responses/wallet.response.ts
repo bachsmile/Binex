@@ -27,3 +27,8 @@ export class WalletActionResponse {
   @ApiProperty({ type: Wallet, required: false })
   data?: Wallet;
 }
+
+export class AdminWalletResponse {
+  @ApiProperty()
+  address: string;
+}

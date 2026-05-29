@@ -1,17 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-  IsArray,
-  IsOptional,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateServiceDto {
   @ApiProperty({ example: 'Wedding' })
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiProperty({ example: 'WEDDING', required: false })
+  @IsString()
+  @IsOptional()
+  code?: string;
 
   @ApiProperty({ example: 'Wedding services including cards and web' })
   @IsString()
@@ -38,11 +37,16 @@ export class CreateServiceDto {
   @IsOptional()
   updatedAt?: string;
 
-  @IsOptional()
-  packageIds?: string[];
-
-  @ApiProperty({ example: 'https://example.com/thumbnail.png', required: false })
+  @ApiProperty({
+    example: 'https://example.com/thumbnail.png',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   thumbnail?: string;
+
+  @ApiProperty({ example: 'active', required: false })
+  @IsString()
+  @IsOptional()
+  status?: string;
 }

@@ -1,9 +1,6 @@
-export interface UserPermission {
+export interface UserSubscription {
   id: string;
-  serId: string | null;
-  serName: string | null;
   packId: string | null;
-  packName: string | null;
   ac: number;
   userId: string;
   expiredAt: string | null;
@@ -32,9 +29,8 @@ export interface User {
   storageLimit: number;
   recordLimit: Record<string, number>;
   managerIds: string[] | null;
-  walletIds: string[] | null;
-  packageIds: string[] | null;
-  userPermissions?: UserPermission[];
+
+  userSubscriptions?: UserSubscription[];
   createdAt: string;
   updatedAt: string;
 }

@@ -1,4 +1,5 @@
 import type { ApiError } from '~/types/api-error';
+import type { ApiResponse, ApiListResponse } from '~/types/api-response';
 
 export interface PackageItem {
   id?: string;
@@ -12,7 +13,9 @@ export interface PackageItem {
   storageLimit: number;
   recordLimit?: any;
   serviceId: string;
-  ser: number;
+  ac: number;
+  serviceIds?: string[];
+  services?: any[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -23,18 +26,18 @@ export const usePackageApi = () => {
     ...api,
 
     findAll: () => 
-      api.call<PackageItem[], ApiError>('/package', 'GET'),
+      api.call<ApiListResponse<PackageItem>, ApiError>('/package', 'GET'),
 
     findOne: (id: string) =>
-      api.call<PackageItem, ApiError>(`/package/${id}`, 'GET'),
+      api.call<ApiResponse<PackageItem>, ApiError>(`/package/${id}`, 'GET'),
 
     create: (payload: Partial<PackageItem>) => 
-      api.call<PackageItem, ApiError>('/package', 'POST', payload),
+      api.call<ApiResponse<PackageItem>, ApiError>('/package', 'POST', payload),
 
     update: (id: string, payload: Partial<PackageItem>) => 
-      api.call<PackageItem, ApiError>(`/package/${id}`, 'PATCH', payload),
+      api.call<ApiResponse<PackageItem>, ApiError>(`/package/${id}`, 'PATCH', payload),
 
     remove: (id: string) => 
-      api.call<any, ApiError>(`/package/${id}`, 'DELETE'),
+      api.call<ApiResponse<PackageItem>, ApiError>(`/package/${id}`, 'DELETE'),
   };
 };

@@ -1,19 +1,42 @@
 import type { User } from "~/types/response/user";
+import { useWalletApi } from "~/api/wallet";
 
 export const useUser = () => {
   const user = useState<User | null>("user-info", () => null);
+  const hasWallet = useState<boolean>("user-has-wallet", () => false);
 
   const isCreateWalletModalOpen = useState(
     "create-wallet-modal-open",
     () => false,
   );
 
+  const checkUserWallet = async () => {
+    if (!user.value) {
+      hasWallet.value = false;
+      return;
+    }
+    try {
+      const walletApi = useWalletApi();
+      const res = await walletApi.findMine();
+      hasWallet.value = !!(res.status && Array.isArray(res.data) && res.data.length > 0);
+    } catch (err) {
+      console.error("[useUser] Failed to check wallet:", err);
+      hasWallet.value = false;
+    }
+  };
+
   const setUser = (userData: User | null) => {
     user.value = userData;
+    if (userData) {
+      checkUserWallet();
+    } else {
+      hasWallet.value = false;
+    }
   };
 
   const clearUser = () => {
     user.value = null;
+    hasWallet.value = false;
   };
 
   const openCreateWalletModal = () => {
@@ -23,10 +46,6 @@ export const useUser = () => {
   const closeCreateWalletModal = () => {
     isCreateWalletModalOpen.value = false;
   };
-
-  const hasWallet = computed(() => {
-    return (user.value?.walletIds?.length ?? 0) > 0;
-  });
 
   const depositData = useState<{
     packageId?: string;

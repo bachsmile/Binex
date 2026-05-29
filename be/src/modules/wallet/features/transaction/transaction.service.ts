@@ -16,7 +16,32 @@ export class TransactionService {
     return this.transactionRepository.save(transaction);
   }
 
-  async findAllByUserId(userId: string) {
+  async findAll(page?: number, limit?: number) {
+    if (page && limit) {
+      const [data, total] = await this.transactionRepository.findAndCount({
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createdAt: 'DESC' },
+      });
+      return { data, total };
+    }
+
+    return this.transactionRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findAllByUserId(userId: string, page?: number, limit?: number) {
+    if (page && limit) {
+      const [data, total] = await this.transactionRepository.findAndCount({
+        where: { userId },
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createdAt: 'DESC' },
+      });
+      return { data, total };
+    }
+
     return this.transactionRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },

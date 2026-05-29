@@ -6,13 +6,24 @@ import { User } from './entities/user.entity';
 
 import { AuthModule } from '../auth/auth.module';
 
-import { UserPermission } from './entities/user-permission.entity';
+import { UserSubscription } from './entities/user-subscription.entity';
+import { Permission } from '../service/entities/permission.entity';
 import { Service } from '../service/entities/service.entity';
+import { ServiceGroup } from '../service-group/entities/service-group.entity';
+import { ServiceGroupModule } from '../service-group/service-group.module';
 import { Package } from '../service/entities/package.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserPermission, Service, Package]),
+    ServiceGroupModule,
+    TypeOrmModule.forFeature([
+      User,
+      UserSubscription,
+      Permission,
+      Service,
+      ServiceGroup,
+      Package,
+    ]),
     forwardRef(() => AuthModule),
   ],
 

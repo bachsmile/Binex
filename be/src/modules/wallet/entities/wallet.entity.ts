@@ -6,13 +6,16 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 import { ulid } from 'ulid';
+import { User } from '../../user/entities/user.entity';
 
 @Entity()
 export class Wallet {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -55,6 +58,9 @@ export class Wallet {
   @Column({ default: false })
   isDeleted: boolean;
 
+  @Column({ default: false })
+  isAdminWallet: boolean;
+
   @Column()
   pin: string;
 
@@ -66,4 +72,8 @@ export class Wallet {
 
   @Column({ unique: true })
   publicKey: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

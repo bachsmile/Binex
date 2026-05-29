@@ -13,20 +13,17 @@ export const useServiceApi = () => {
     findAll: () => 
       api.call<ApiListResponse<Service>, ApiError>('/service', 'GET'),
 
+    findAllServices: () => 
+      api.call<ApiResponse<Service[]>, ApiError>('/service/services/all', 'GET'),
+
     findOne: (payload: string) => 
       api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'GET'),
-
-    findByUserId: (payload: string) => 
-      api.call<ApiResponse<string>, ApiError>(`/service/user/${payload}`, 'GET'),
 
     update: (payload: string) => 
       api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'PATCH'),
 
     remove: (payload: string) => 
       api.call<ApiResponse<Service>, ApiError>(`/service/${payload}`, 'DELETE'),
-
-    findWithPriority: (payload: string) => 
-      api.call<ApiResponse<Service[]>, ApiError>(`/service/priority/${payload}`, 'GET'),
 
   };
 };

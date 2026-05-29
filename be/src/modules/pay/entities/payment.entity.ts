@@ -18,9 +18,9 @@ export enum PaymentRequestStatus {
   REJECTED = 'rejected',
 }
 
-@Entity('payment_request')
-export class PaymentRequest {
-  @PrimaryColumn({ length: 255 })
+@Entity('payment')
+export class Payment {
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -34,7 +34,7 @@ export class PaymentRequest {
   packageId?: string;
 
   @Column({ nullable: true })
-  serviceId?: string;
+  serviceGroupId?: string;
 
   @Column({
     type: 'enum',

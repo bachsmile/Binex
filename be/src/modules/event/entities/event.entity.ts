@@ -19,7 +19,7 @@ export enum EventStatus {
 
 @Entity('event')
 export class Event {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()

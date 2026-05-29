@@ -7,8 +7,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ActivationKey } from './entities/activation-key.entity';
 import { Package } from '../service/entities/package.entity';
-import { UserPermission } from '../user/entities/user-permission.entity';
-import { Service } from '../service/entities/service.entity';
+import { UserSubscription } from '../user/entities/user-subscription.entity';
+import { Permission } from '../service/entities/permission.entity';
+import { ServiceGroup } from '../service-group/entities/service-group.entity';
+import { ServiceGroupModule } from '../service-group/service-group.module';
 import { MailModule } from '../mail/mail.module';
 import { forwardRef } from '@nestjs/common';
 import { UserModule } from '../user/user.module';
@@ -17,12 +19,14 @@ import { UserModule } from '../user/user.module';
   imports: [
     MailModule,
     forwardRef(() => UserModule),
+    ServiceGroupModule,
     TypeOrmModule.forFeature([
       User,
       ActivationKey,
       Package,
-      UserPermission,
-      Service,
+      UserSubscription,
+      Permission,
+      ServiceGroup,
     ]),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({

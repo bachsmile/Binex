@@ -7,7 +7,7 @@ import mascotLogin from '/img/mascot_login.png';
 
 const isOpen = useState('create-wallet-modal-open', () => false);
 const walletApi = useWalletApi();
-const { user, openDepositModal } = useUser();
+const { user, openDepositModal, hasWallet } = useUser();
 
 // State management
 const currentStep = ref(1);
@@ -85,9 +85,7 @@ const handleVerifyAndCreate = async () => {
 
       if (createRes?.data) {
         // Cập nhật store cục bộ để UI nhận diện đã có ví ngay lập tức
-        if (user.value) {
-          user.value.walletIds = [...(user.value.walletIds || []), createRes.data.id];
-        }
+        hasWallet.value = true;
 
         createdWallet.value = createRes.data;
         currentStep.value = 4;

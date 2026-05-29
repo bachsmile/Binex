@@ -19,7 +19,7 @@ import { Guest } from './guest.entity';
 
 @Entity('wedding')
 export class Wedding {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()

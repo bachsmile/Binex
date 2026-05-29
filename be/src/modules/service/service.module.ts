@@ -6,6 +6,7 @@ import { Service } from './entities/service.entity';
 import { LimitType } from './entities/limit-type.entity';
 import { AuthModule } from '../auth/auth.module';
 import { PackageModule } from './features/package/package.module';
+import { PermissionModule } from './features/permission/permission.module';
 import { LimitTypeService } from './limit-type.service';
 import { LimitTypeController } from './limit-type.controller';
 
@@ -14,9 +15,10 @@ import { LimitTypeController } from './limit-type.controller';
     TypeOrmModule.forFeature([Service, LimitType]),
     AuthModule,
     PackageModule,
+    PermissionModule,
   ],
   controllers: [ServiceController, LimitTypeController],
   providers: [ServiceService, LimitTypeService],
-  exports: [ServiceService, LimitTypeService],
+  exports: [ServiceService, LimitTypeService, TypeOrmModule],
 })
 export class ServiceModule {}

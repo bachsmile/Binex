@@ -45,5 +45,10 @@ export interface CreateMethodPayDto {
    */
   status?: string;
 
+  /**
+   * example: 01HJ...
+   */
+  userId?: string;
+
 }
 

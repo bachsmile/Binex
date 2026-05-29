@@ -17,6 +17,8 @@ watch(() => route.path, (newPath) => {
     activeTab.value = 'Người dùng';
   } else if (newPath.endsWith('/systems')) {
     activeTab.value = 'Hệ thống';
+  } else if (newPath.includes('/orders')) {
+    activeTab.value = 'Đơn hàng';
   } else if (newPath.includes('/finance/binex-wallet')) {
     activeTab.value = 'Ví Binex';
   } else if (newPath.includes('/finance/transactions')) {
@@ -50,6 +52,7 @@ const managementMenu = computed(() => {
   ];
   if (isSupper.value) {
     items.push({ name: 'Hệ thống', icon: 'heroicons:server-stack', to: '/supper/systems' });
+    items.push({ name: 'Đơn hàng', icon: 'heroicons:shopping-cart', to: '/supper/orders' });
   }
   return items;
 });

@@ -10,7 +10,7 @@ import { Role } from '../enums/role.enum';
 
 @Entity('activation_key')
 export class ActivationKey {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -37,7 +37,7 @@ export class ActivationKey {
   packageId: string;
 
   @Column()
-  serviceId: string;
+  serviceGroupId: string;
 
   @Column({ default: false })
   isUsed: boolean;

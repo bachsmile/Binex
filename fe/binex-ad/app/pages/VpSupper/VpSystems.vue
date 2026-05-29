@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useServiceApi, type ServiceItem } from '~/api/service';
+import { useServiceApi, type Service, type ServiceGroup } from '~/api/service';
 import { usePackageApi, type PackageItem } from '~/api/package';
+import { useUploadApi } from '~/api/upload';
+import { usePermissionApi, type PermissionItem } from '~/api/permission';
 
 definePageMeta({
   path: '/supper/systems',
@@ -10,7 +12,7 @@ definePageMeta({
 
 const api = useServiceApi();
 const packageApi = usePackageApi();
-const systemsList = ref<ServiceItem[]>([]);
+const systemsList = ref<ServiceGroup[]>([]);
 const listLoading = ref(false);
 
 // Toast overlay state
@@ -33,8 +35,9 @@ const formLoading = ref(false);
 const isEditing = ref(false);
 const currentId = ref<string | null>(null);
 
-const systemForm = ref<Partial<ServiceItem>>({
+const systemForm = ref<Partial<ServiceGroup>>({
   name: '',
+  code: '',
   description: '',
   priority: 1,
   icon: 'heroicons:server',
@@ -43,7 +46,7 @@ const systemForm = ref<Partial<ServiceItem>>({
 });
 
 const config = useRuntimeConfig();
-const { call } = useApi();
+const uploadApi = useUploadApi();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const uploadingImage = ref(false);
 
@@ -70,7 +73,7 @@ const targetDeleteId = ref<string | null>(null);
 // Active packages modal state
 const isPackagesModalOpen = ref(false);
 const selectedSystem = ref<any>(null);
-const activeCategory = ref<'monthly' | 'yearly' | 'group'>('monthly');
+const activeCategory = ref<'monthly' | 'yearly' | 'lifetime' | 'group'>('monthly');
 
 // Compute Host based on system name
 const getHost = (sys: any) => {
@@ -97,30 +100,17 @@ const formatCurrency = (value: number) => {
 const fetchServices = async () => {
   listLoading.value = true;
   try {
-    // 1. Fetch all services
+    // 1. Fetch all services (already includes 'packages' relation from backend)
     const res = await api.findAll();
-    
-    // 2. Fetch all packages to get exact package count per service
-    let packages: PackageItem[] = [];
-    try {
-      const pkgRes = await packageApi.findAll();
-      if (pkgRes && pkgRes.status && Array.isArray(pkgRes.data)) {
-        packages = pkgRes.data;
-      } else if (Array.isArray(pkgRes)) {
-        packages = pkgRes;
-      }
-    } catch (err) {
-      console.warn('Failed to fetch packages for counts', err);
-    }
 
     if (res && res.data) {
       systemsList.value = res.data.map(item => {
-        // Count how many packages belong to this system
-        const pkgCount = packages.filter(pkg => pkg.serviceId === item.id).length;
+        // Count how many packages belong to this system directly from populated relation
+        const pkgCount = Array.isArray(item.packages) ? item.packages.length : 0;
         
         return {
           ...item,
-          status: 'active',
+          status: item.status || 'active',
           users: Math.floor(Math.random() * 5000) + 120,
           packagesCount: pkgCount,
           ping: `${Math.floor(Math.random() * 20) + 15}ms`,
@@ -140,7 +130,22 @@ const fetchServices = async () => {
 
 onMounted(() => {
   fetchServices();
+  fetchServicesList();
 });
+
+const servicesList = ref<Service[]>([]);
+const fetchServicesList = async () => {
+  try {
+    const res = await api.findAllServices();
+    if (res && res.status && Array.isArray(res.data)) {
+      servicesList.value = res.data;
+    } else if (Array.isArray(res)) {
+      servicesList.value = res;
+    }
+  } catch (err) {
+    console.error('Failed to fetch services', err);
+  }
+};
 
 // CRUD action handlers
 const openCreateForm = () => {
@@ -148,6 +153,7 @@ const openCreateForm = () => {
   currentId.value = null;
   systemForm.value = {
     name: '',
+    code: '',
     description: '',
     priority: systemsList.value.length + 1,
     icon: 'heroicons:server',
@@ -157,11 +163,12 @@ const openCreateForm = () => {
   isFormOpen.value = true;
 };
 
-const openEditForm = (item: ServiceItem) => {
+const openEditForm = (item: ServiceGroup) => {
   isEditing.value = true;
   currentId.value = item.id;
   systemForm.value = {
     name: item.name,
+    code: item.code || '',
     description: item.description,
     priority: item.priority || 1,
     icon: item.icon || 'heroicons:server',
@@ -195,7 +202,7 @@ const saveSystem = async () => {
   }
 };
 
-const confirmDelete = (item: ServiceItem) => {
+const confirmDelete = (item: ServiceGroup) => {
   targetDeleteId.value = item.id;
   isDeleteConfirmOpen.value = true;
 };
@@ -229,7 +236,7 @@ const handleImageUpload = async (event: Event) => {
 
   uploadingImage.value = true;
   try {
-    const res = await call('/upload/images', 'POST', formData);
+    const res = await uploadApi.uploadImages(formData);
     if (res && res.status && res.data && res.data.length > 0) {
       systemForm.value.thumbnail = res.data[0].url;
       triggerToast('Tải lên ảnh đại diện thành công!');
@@ -261,8 +268,9 @@ const packageForm = ref<Partial<PackageItem>>({
   amountGroup: 1,
   expire: 1,
   storageLimit: 0,
-  ser: 1,
-  serviceId: ''
+  ac: 1,
+  serviceId: '',
+  serviceIds: []
 });
 
 const fetchPackages = async () => {
@@ -288,16 +296,18 @@ const filteredPackages = computed(() => {
   if (!selectedSystem.value) return [];
   const list = packagesList.value.filter(pkg => pkg.serviceId === selectedSystem.value?.id);
   
-  // Sort by ser ascending
-  list.sort((a, b) => (a.ser || 0) - (b.ser || 0));
+  // Sort by ac ascending
+  list.sort((a, b) => (a.ac || 0) - (b.ac || 0));
 
   if (activeCategory.value === 'group') {
     return list.filter(pkg => pkg.isGroup === true);
+  } else if (activeCategory.value === 'lifetime') {
+    return list.filter(pkg => pkg.expire === 0 && !pkg.isGroup);
   } else if (activeCategory.value === 'yearly') {
     return list.filter(pkg => pkg.expire > 1 && !pkg.isGroup);
   } else {
     // monthly
-    return list.filter(pkg => pkg.expire <= 1 && !pkg.isGroup);
+    return list.filter(pkg => pkg.expire === 1 && !pkg.isGroup);
   }
 });
 
@@ -313,8 +323,9 @@ const openCreatePackage = () => {
     amountGroup: 1,
     expire: 1,
     storageLimit: 0,
-    ser: 1,
-    serviceId: selectedSystem.value?.id || ''
+    ac: 1,
+    serviceId: selectedSystem.value?.id || '',
+    serviceIds: []
   };
   showPackageForm.value = true;
 };
@@ -331,8 +342,9 @@ const openEditPackage = (pkg: PackageItem) => {
     amountGroup: pkg.amountGroup,
     expire: pkg.expire,
     storageLimit: pkg.storageLimit,
-    ser: pkg.ser,
-    serviceId: pkg.serviceId
+    ac: pkg.ac,
+    serviceId: pkg.serviceId,
+    serviceIds: Array.isArray(pkg.services) ? pkg.services.map((item: any) => item.id) : (pkg.serviceIds || [])
   };
   showPackageForm.value = true;
 };
@@ -351,8 +363,9 @@ const savePackage = async () => {
       sale: Number(packageForm.value.sale) || 0,
       expire: Number(packageForm.value.expire) || 1,
       storageLimit: Number(packageForm.value.storageLimit) || 0,
-      ser: Number(packageForm.value.ser) || 1,
-      amountGroup: packageForm.value.isGroup ? 5 : 1
+      ac: Number(packageForm.value.ac) || 1,
+      amountGroup: packageForm.value.isGroup ? 5 : 1,
+      serviceIds: packageForm.value.serviceIds || []
     };
 
     if (isEditingPackage.value && currentPackageId.value) {
@@ -401,6 +414,86 @@ const viewPackages = async (sys: any) => {
   showPackageForm.value = false;
   isPackagesModalOpen.value = true;
   await fetchPackages();
+};
+
+// ===== PERMISSION MODAL =====
+const permissionApi = usePermissionApi();
+const isPermModalOpen = ref(false);
+const permLoading = ref(false);
+const currentPermPackage = ref<PackageItem | null>(null);
+const permissionsList = ref<PermissionItem[]>([]);
+
+// Preset permission actions (có thể mở rộng)
+const availableActions = [
+  { label: 'user.read', value: 'user.read' },
+  { label: 'user.create', value: 'user.create' },
+  { label: 'user.update', value: 'user.update' },
+  { label: 'user.delete', value: 'user.delete' },
+  { label: 'landing_page.read', value: 'landing_page.read' },
+  { label: 'landing_page.edit', value: 'landing_page.edit' },
+  { label: 'report.view', value: 'report.view' },
+  { label: 'report.export', value: 'report.export' },
+  { label: 'billing.view', value: 'billing.view' },
+  { label: 'billing.manage', value: 'billing.manage' },
+  { label: 'api.access', value: 'api.access' },
+  { label: 'storage.upload', value: 'storage.upload' },
+];
+
+// Track selected actions as a Set for easy toggle
+const selectedActions = ref<Set<string>>(new Set());
+
+const openPermModal = async (pkg: PackageItem) => {
+  currentPermPackage.value = pkg;
+  selectedActions.value = new Set();
+  permissionsList.value = [];
+  isPermModalOpen.value = true;
+  permLoading.value = true;
+  try {
+    const res = await permissionApi.findByPackId(pkg.id!);
+    const list: PermissionItem[] = Array.isArray(res)
+      ? res
+      : (res as any)?.data ?? [];
+    permissionsList.value = list;
+    selectedActions.value = new Set(list.map((p) => p.action));
+  } catch {
+    triggerToast('Không thể tải danh sách quyền!', 'error');
+  } finally {
+    permLoading.value = false;
+  }
+};
+
+const toggleAction = (action: string) => {
+  if (selectedActions.value.has(action)) {
+    selectedActions.value.delete(action);
+  } else {
+    selectedActions.value.add(action);
+  }
+  // force reactivity
+  selectedActions.value = new Set(selectedActions.value);
+};
+
+const customAction = ref('');
+const addCustomAction = () => {
+  const val = customAction.value.trim();
+  if (!val) return;
+  selectedActions.value.add(val);
+  selectedActions.value = new Set(selectedActions.value);
+  customAction.value = '';
+};
+
+const savePermissions = async () => {
+  if (!currentPermPackage.value) return;
+  permLoading.value = true;
+  try {
+    const actions = Array.from(selectedActions.value).map((a) => ({ action: a, weight: 1 }));
+    await permissionApi.bulkSet({ packId: currentPermPackage.value.id!, actions });
+    triggerToast('Cập nhật quyền thành công!');
+    isPermModalOpen.value = false;
+  } catch {
+    triggerToast('Lưu quyền thất bại!', 'error');
+  } finally {
+    permLoading.value = false;
+  }
 };
 </script>
 
@@ -560,69 +653,81 @@ const viewPackages = async (sys: any) => {
           {{ isEditing ? 'Cập nhật các thông số kỹ thuật và mô tả hoạt động của hệ thống.' : 'Khởi tạo cấu hình hệ thống trực thuộc mới vào cơ sở dữ liệu Binex.' }}
         </p>
 
-        <!-- Name & Priority -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="sm:col-span-2">
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Tên hệ thống</label>
-            <CmInput v-model="systemForm.name" placeholder="Ví dụ: Hệ thống Binex Billing" class="w-full text-xs font-medium" />
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Độ ưu tiên</label>
-            <CmInput type="number" v-model="systemForm.priority" placeholder="Ví dụ: 1" class="w-full text-xs font-medium" />
-          </div>
-        </div>
-
-        <!-- Icon & Thumbnail -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Biểu tượng (Icon)</label>
-            <el-popover
-              placement="bottom-start"
-              :width="280"
-              trigger="click"
-              popper-class="!p-0 !rounded-xl !border-zinc-150/80 dark:!border-zinc-850 !bg-white dark:!bg-zinc-950"
-            >
-              <template #reference>
-                <button 
-                  type="button"
-                  class="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl border border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-850 dark:text-zinc-100 text-xs sm:text-sm font-medium transition-all text-left outline-none"
-                >
-                  <div class="w-7 h-7 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/10 flex items-center justify-center text-primary">
-                    <Icon :name="systemForm.icon || 'heroicons:server'" class="text-base" />
-                  </div>
-                  <span class="flex-1 capitalize font-bold text-zinc-700 dark:text-zinc-300">
-                    {{ systemForm.icon ? systemForm.icon.replace('heroicons:', '').replace('-', ' ') : 'server' }}
-                  </span>
-                  <Icon name="heroicons:chevron-down" class="text-zinc-400 text-xs" />
-                </button>
-              </template>
-
-              <div class="p-3 bg-white dark:bg-zinc-950">
-                <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2.5 px-1 select-none">Chọn biểu tượng hệ thống</p>
-                <div class="grid grid-cols-4 gap-2">
-                  <button
-                    v-for="icon in iconList"
-                    :key="icon"
-                    type="button"
-                    @click="systemForm.icon = icon"
-                    class="w-11 h-11 rounded-lg border flex items-center justify-center transition-all outline-none"
-                    :class="[
-                      systemForm.icon === icon 
-                        ? 'border-primary bg-primary/5 text-primary shadow-sm scale-95 ring-2 ring-primary/20' 
-                        : 'border-zinc-150 hover:border-zinc-300 dark:border-zinc-850 dark:hover:border-zinc-750 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-550 dark:text-zinc-400'
-                    ]"
-                    :title="icon"
-                  >
-                    <Icon :name="icon" class="text-lg" />
-                  </button>
-                </div>
+        <!-- Form Fields Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- Left side: Text inputs & Selection (2/3 width) -->
+          <div class="md:col-span-2 space-y-4">
+            <!-- Row 1: Name & Code -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Tên hệ thống</label>
+                <CmInput v-model="systemForm.name" placeholder="Ví dụ: Hệ thống Binex Billing" class="w-full text-xs font-medium" />
               </div>
-            </el-popover>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Mã hệ thống (Code)</label>
+                <CmInput v-model="systemForm.code" placeholder="Ví dụ: BILLING" class="w-full text-xs font-medium" />
+              </div>
+            </div>
+
+            <!-- Row 2: Priority & Icon -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Độ ưu tiên</label>
+                <CmInput type="number" v-model="systemForm.priority" placeholder="Ví dụ: 1" class="w-full text-xs font-medium" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Biểu tượng (Icon)</label>
+                <el-popover
+                  placement="bottom-start"
+                  :width="280"
+                  trigger="click"
+                  popper-class="!p-0 !rounded-xl !border-zinc-150/80 dark:!border-zinc-850 !bg-white dark:!bg-zinc-950"
+                >
+                  <template #reference>
+                    <button 
+                      type="button"
+                      class="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl border border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-850 dark:text-zinc-100 text-xs sm:text-sm font-medium transition-all text-left outline-none"
+                    >
+                      <div class="w-7 h-7 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/10 flex items-center justify-center text-primary">
+                        <Icon :name="systemForm.icon || 'heroicons:server'" class="text-base" />
+                      </div>
+                      <span class="flex-1 capitalize font-bold text-zinc-700 dark:text-zinc-300">
+                        {{ systemForm.icon ? systemForm.icon.replace('heroicons:', '').replace('-', ' ') : 'server' }}
+                      </span>
+                      <Icon name="heroicons:chevron-down" class="text-zinc-400 text-xs" />
+                    </button>
+                  </template>
+
+                  <div class="p-3 bg-white dark:bg-zinc-950">
+                    <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2.5 px-1 select-none">Chọn biểu tượng hệ thống</p>
+                    <div class="grid grid-cols-4 gap-2">
+                      <button
+                        v-for="icon in iconList"
+                        :key="icon"
+                        type="button"
+                        @click="systemForm.icon = icon"
+                        class="w-11 h-11 rounded-lg border flex items-center justify-center transition-all outline-none"
+                        :class="[
+                          systemForm.icon === icon 
+                            ? 'border-primary bg-primary/5 text-primary shadow-sm scale-95 ring-2 ring-primary/20' 
+                            : 'border-zinc-150 hover:border-zinc-300 dark:border-zinc-850 dark:hover:border-zinc-750 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-550 dark:text-zinc-400'
+                        ]"
+                        :title="icon"
+                      >
+                        <Icon :name="icon" class="text-lg" />
+                      </button>
+                    </div>
+                  </div>
+                </el-popover>
+              </div>
+            </div>
           </div>
-          <div>
+
+          <!-- Right side: Thumbnail Upload (1/3 width, flex auto height matching the left column) -->
+          <div class="flex flex-col">
             <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Ảnh đại diện (Thumbnail)</label>
             
-            <div class="relative w-full max-w-[180px]">
+            <div class="relative w-full flex-1 flex flex-col min-h-[125px]">
               <input 
                 type="file" 
                 ref="fileInputRef" 
@@ -633,7 +738,7 @@ const viewPackages = async (sys: any) => {
               
               <div 
                 @click="triggerFileInput"
-                class="border-2 border-dashed border-zinc-200 hover:border-primary/50 dark:border-zinc-800 dark:hover:border-primary/50 rounded-xl bg-white dark:bg-zinc-950 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 group overflow-hidden select-none aspect-video w-full relative shadow-inner"
+                class="border-2 border-dashed border-zinc-200 hover:border-primary/50 dark:border-zinc-800 dark:hover:border-primary/50 rounded-xl bg-white dark:bg-zinc-950 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 group overflow-hidden select-none w-full flex-1 relative shadow-inner aspect-video md:aspect-auto"
               >
                 <!-- Loading State Overlay -->
                 <div v-if="uploadingImage" class="absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xs flex items-center justify-center z-10">
@@ -794,7 +899,7 @@ const viewPackages = async (sys: any) => {
             <!-- Thời hạn -->
             <div>
               <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Thời hạn sử dụng</label>
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   @click="packageForm.expire = 1"
@@ -819,13 +924,25 @@ const viewPackages = async (sys: any) => {
                 >
                   1 Năm
                 </button>
+                <button
+                  type="button"
+                  @click="packageForm.expire = 0"
+                  class="py-2.5 rounded-xl border text-xs font-bold transition-all outline-none"
+                  :class="[
+                    packageForm.expire === 0 
+                      ? 'border-violet-500 bg-violet-500/5 text-violet-600 shadow-sm ring-2 ring-violet-500/20' 
+                      : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400'
+                  ]"
+                >
+                  ♾ Vĩnh viễn
+                </button>
               </div>
             </div>
 
             <!-- Thứ tự ưu tiên -->
             <div>
               <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 select-none">Độ ưu tiên hiển thị</label>
-              <CmInput v-model="packageForm.ser" type="number" min="1" placeholder="Số nhỏ hiển thị trước" class="w-full text-xs font-medium" />
+              <CmInput v-model="packageForm.ac" type="number" min="1" placeholder="Số nhỏ hiển thị trước" class="w-full text-xs font-medium" />
             </div>
 
             <!-- Dung lượng giới hạn -->
@@ -857,6 +974,41 @@ const viewPackages = async (sys: any) => {
               :rows="5"
               :maxlength="1000"
             />
+          </div>
+
+          <!-- Services checklist mapping -->
+          <div v-if="servicesList.length > 0">
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2.5 select-none">
+              Danh sách tính năng hệ thống kích hoạt đi kèm
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-zinc-100/30 dark:bg-zinc-950/20 p-4.5 rounded-2xl border border-zinc-150/50 dark:border-zinc-850/50">
+              <label
+                v-for="item in servicesList"
+                :key="item.id"
+                class="flex items-start gap-2.5 p-3 rounded-xl border text-[11px] font-bold transition-all cursor-pointer select-none outline-none leading-tight"
+                :class="[
+                  (packageForm.serviceIds || []).includes(item.id)
+                    ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-950'
+                ]"
+              >
+                <input
+                  type="checkbox"
+                  :value="item.id"
+                  v-model="packageForm.serviceIds"
+                  class="rounded border-zinc-350 text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5 shrink-0 mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5">
+                    <Icon v-if="item.icon" :name="item.icon" class="text-xs shrink-0" />
+                    <span>{{ item.name }}</span>
+                  </div>
+                  <p class="text-[9px] font-medium text-zinc-400 mt-1 leading-normal line-clamp-2">
+                    {{ item.description }}
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
 
@@ -891,6 +1043,18 @@ const viewPackages = async (sys: any) => {
               >
                 <Icon name="heroicons:sparkles" class="text-sm" />
                 <span>Theo năm</span>
+              </CmButton>
+              <CmButton 
+                @click="activeCategory = 'lifetime'"
+                variant="ghost"
+                size="sm"
+                class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
+                :class="activeCategory === 'lifetime'
+                  ? '!bg-white dark:!bg-zinc-800 !text-violet-600 shadow-sm'
+                  : '!text-zinc-500 dark:!text-zinc-400 hover:!text-zinc-855 dark:hover:!text-zinc-155'"
+              >
+                <Icon name="heroicons:infinity" class="text-sm" />
+                <span>Vĩnh viễn</span>
               </CmButton>
               <CmButton 
                 @click="activeCategory = 'group'"
@@ -951,7 +1115,8 @@ const viewPackages = async (sys: any) => {
                   </template>
                   
                   <span class="text-[10px] text-zinc-455 font-bold ml-0.5">
-                    /{{ pkg.expire }} tháng
+                    <template v-if="pkg.expire === 0">/ Vĩnh viễn ♾</template>
+                    <template v-else>/{{ pkg.expire }} tháng</template>
                   </span>
                   
                   <!-- Sale badge if discount exists -->
@@ -973,25 +1138,36 @@ const viewPackages = async (sys: any) => {
               </div>
 
               <!-- Actions on package card -->
-              <div class="grid grid-cols-2 gap-2 mt-5 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+              <div class="space-y-2 mt-5 border-t border-zinc-100 dark:border-zinc-900 pt-4">
                 <CmButton 
-                  variant="ghost" 
+                  variant="outline" 
                   size="sm" 
-                  icon="heroicons:pencil-square"
-                  class="text-[10px] font-bold !text-zinc-500 hover:!text-primary w-full"
-                  @click="openEditPackage(pkg)"
+                  icon="heroicons:shield-check"
+                  class="text-[10px] font-bold w-full border-violet-200 !text-violet-600 hover:bg-violet-50 dark:border-violet-900 dark:hover:bg-violet-950/20"
+                  @click="openPermModal(pkg)"
                 >
-                  Sửa
+                  Cập nhật quyền
                 </CmButton>
-                <CmButton 
-                  variant="ghost" 
-                  size="sm" 
-                  icon="heroicons:trash"
-                  class="text-[10px] font-bold !text-zinc-450 hover:!text-red-500 w-full"
-                  @click="deletePackage(pkg.id)"
-                >
-                  Xóa
-                </CmButton>
+                <div class="grid grid-cols-2 gap-2">
+                  <CmButton 
+                    variant="ghost" 
+                    size="sm" 
+                    icon="heroicons:pencil-square"
+                    class="text-[10px] font-bold !text-zinc-500 hover:!text-primary w-full"
+                    @click="openEditPackage(pkg)"
+                  >
+                    Sửa
+                  </CmButton>
+                  <CmButton 
+                    variant="ghost" 
+                    size="sm" 
+                    icon="heroicons:trash"
+                    class="text-[10px] font-bold !text-zinc-450 hover:!text-red-500 w-full"
+                    @click="deletePackage(pkg.id)"
+                  >
+                    Xóa
+                  </CmButton>
+                </div>
               </div>
             </div>
 
@@ -1052,6 +1228,115 @@ const viewPackages = async (sys: any) => {
               Đóng
             </CmButton>
           </template>
+        </div>
+      </template>
+    </CmDialog>
+
+    <!-- ===== PERMISSION MODAL ===== -->
+    <CmDialog
+      v-model:isOpen="isPermModalOpen"
+      :title="currentPermPackage ? `Quyền hệ thống - ${currentPermPackage.name}` : 'Quyền gói dịch vụ'"
+      size="md"
+    >
+      <div class="space-y-5">
+        <p class="text-xs text-zinc-400 font-medium leading-relaxed">
+          Chọn các quyền mà gói <strong class="text-zinc-700 dark:text-zinc-300">{{ currentPermPackage?.name }}</strong> sẽ được cấp phép. Chỉ Super Admin mới có thể thay đổi cấu hình này.
+        </p>
+
+        <!-- Loading -->
+        <div v-if="permLoading" class="py-8 flex justify-center">
+          <Icon name="svg-spinners:ring-resize" class="text-2xl text-violet-500 animate-spin" />
+        </div>
+
+        <div v-else class="space-y-4">
+          <!-- Preset actions grid -->
+          <div>
+            <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 select-none">Quyền mặc định</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button
+                v-for="act in availableActions"
+                :key="act.value"
+                type="button"
+                @click="toggleAction(act.value)"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all outline-none text-left"
+                :class="selectedActions.has(act.value)
+                  ? 'border-violet-400 bg-violet-500/5 text-violet-700 dark:text-violet-400 shadow-sm ring-1 ring-violet-400/30'
+                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'"
+              >
+                <Icon
+                  :name="selectedActions.has(act.value) ? 'heroicons:check-circle-solid' : 'heroicons:circle'"
+                  class="text-base shrink-0"
+                  :class="selectedActions.has(act.value) ? 'text-violet-500' : 'text-zinc-350 dark:text-zinc-600'"
+                />
+                {{ act.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom action input -->
+          <div>
+            <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 select-none">Thêm quyền tùy chỉnh</p>
+            <div class="flex gap-2">
+              <CmInput
+                v-model="customAction"
+                placeholder="Ví dụ: invoice.export"
+                class="flex-1 text-xs font-medium"
+                @keydown.enter="addCustomAction"
+              />
+              <CmButton
+                variant="outline"
+                size="sm"
+                icon="heroicons:plus"
+                class="text-xs font-bold shrink-0"
+                @click="addCustomAction"
+              >
+                Thêm
+              </CmButton>
+            </div>
+          </div>
+
+          <!-- Currently selected list -->
+          <div v-if="selectedActions.size > 0">
+            <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 select-none">Đang chọn ({{ selectedActions.size }})</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="action in Array.from(selectedActions)"
+                :key="action"
+                class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[10px] font-bold bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-400 border border-violet-200/60 dark:border-violet-900/60"
+              >
+                {{ action }}
+                <button type="button" @click="toggleAction(action)" class="ml-0.5 hover:text-red-500 transition-colors">
+                  <Icon name="heroicons:x-mark" class="text-xs" />
+                </button>
+              </span>
+            </div>
+          </div>
+          <div v-else class="text-xs text-zinc-400 font-medium text-center py-2">
+            Chưa có quyền nào được chọn
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <CmButton
+            variant="ghost"
+            size="md"
+            class="text-xs font-semibold px-5"
+            :disabled="permLoading"
+            @click="isPermModalOpen = false"
+          >
+            Hủy
+          </CmButton>
+          <CmButton
+            variant="primary"
+            size="md"
+            class="text-xs font-bold px-5 bg-violet-600 hover:bg-violet-700 border-violet-600 shadow-sm shadow-violet-500/20"
+            :loading="permLoading"
+            @click="savePermissions"
+          >
+            Lưu quyền
+          </CmButton>
         </div>
       </template>
     </CmDialog>

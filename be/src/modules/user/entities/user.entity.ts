@@ -8,11 +8,12 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ulid } from 'ulid';
+import { Role } from '../../auth/enums/role.enum';
 import { Wedding } from '../../wedding/entities/wedding.entity';
 import { WdWeb } from '../../wedding/entities/wd-web.entity';
 import { WdCard } from '../../wedding/entities/wd-card.entity';
-import { Role } from '../../auth/enums/role.enum';
-import { UserPermission } from './user-permission.entity';
+import { UserSubscription } from './user-subscription.entity';
+import { MethodPay } from '../../pay/entities/method-pay.entity';
 
 export enum UserStatus {
   PENDING = 'pending',
@@ -22,7 +23,7 @@ export enum UserStatus {
 
 @Entity('user')
 export class User {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -122,15 +123,6 @@ export class User {
   @Column('text', { array: true, nullable: true })
   managerIds: string[];
 
-  //Các ví đăng kí cá nhân
-
-  @Column('text', { array: true, nullable: true })
-  walletIds: string[];
-
-  // Gói quà đã nhận
-  @Column('text', { array: true, nullable: true })
-  packageIds: string[];
-
   @OneToMany(() => Wedding, (wedding) => wedding.user)
   weddings: Wedding[];
 
@@ -140,6 +132,9 @@ export class User {
   @OneToMany(() => WdCard, (wdCard) => wdCard.user)
   wdCards: WdCard[];
 
-  @OneToMany(() => UserPermission, (userPermission) => userPermission.user)
-  userPermissions: UserPermission[];
+  @OneToMany(() => UserSubscription, (userSubscription) => userSubscription.user)
+  userSubscriptions: UserSubscription[];
+
+  @OneToMany(() => MethodPay, (methodPay) => methodPay.user)
+  methodPays: MethodPay[];
 }

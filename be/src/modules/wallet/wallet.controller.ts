@@ -13,10 +13,11 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { CurrentUser } from 'src/decorators/current-user.decorator';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { WalletResponse, WalletListResponse, WalletActionResponse } from './responses/wallet.response';
+import { WalletResponse, WalletListResponse, WalletActionResponse, AdminWalletResponse } from './responses/wallet.response';
 import { Wallet } from './entities/wallet.entity';
 
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { UseGuards } from '@nestjs/common';
 
 import { DepositDto } from './dto/deposit.dto';
@@ -27,7 +28,7 @@ import { Role } from '../auth/enums/role.enum';
 @ApiTags('wallet')
 @ApiBearerAuth('JWT-auth')
 @Controller('wallet')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
@@ -35,30 +36,61 @@ export class WalletController {
   @ApiOperation({ summary: 'Tạo ví mới' })
   @ApiResponse({ status: 201, type: Wallet })
   create(@Body() createWalletDto: CreateWalletDto, @CurrentUser() user: any) {
-    return this.walletService.create(createWalletDto, user?.id);
+    const canCreateForOtherUser =
+      user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN;
+    const targetUserId =
+      createWalletDto.userId && canCreateForOtherUser
+        ? createWalletDto.userId
+        : user?.id;
+
+    return this.walletService.create(createWalletDto, targetUserId);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách ví của người dùng' })
+  @ApiOperation({ summary: 'Lấy tất cả ví trong hệ thống' })
   @ApiResponse({ status: 200, type: WalletListResponse })
   findAll(
-    @CurrentUser() user: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
+    return this.walletService.findAll(Number(page) || 1, Number(limit) || 10);
+  }
+
+  @Get('mine')
+  @ApiOperation({ summary: 'Lấy danh sách ví cá nhân của người dùng hiện tại' })
+  @ApiResponse({ status: 200, type: WalletListResponse })
+  findMine(
+    @CurrentUser() user: any,
+    @Query('id') id?: string,
+    @Query('userId') userId?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const requestedUserId = id || userId;
+    const canViewOtherUser =
+      user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN;
+    const targetUserId =
+      requestedUserId && canViewOtherUser ? requestedUserId : user?.id;
+
     return this.walletService.findAllByUserId(
-      user?.id,
+      targetUserId,
       Number(page) || 1,
       Number(limit) || 10,
     );
   }
 
-  @Roles(Role.SUPER_ADMIN)
-  @Get('admin/all')
-  @ApiOperation({ summary: 'Lấy tất cả ví trong hệ thống (Admin)' })
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Get('admin')
+  @ApiOperation({ summary: 'Lấy danh sách ví admin' })
   @ApiResponse({ status: 200, type: WalletListResponse })
-  findAllAdmin(@Query('page') page?: number, @Query('limit') limit?: number) {
-    return this.walletService.findAll(Number(page) || 1, Number(limit) || 10);
+  findAdminWallets(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.walletService.findAllAdmin(
+      Number(page) || 1,
+      Number(limit) || 100,
+    );
   }
 
   @Roles(Role.SUPER_ADMIN)
@@ -70,6 +102,9 @@ export class WalletController {
       depositDto.address,
       depositDto.amount,
       depositDto.currency,
+      depositDto.methodPayId,
+      depositDto.description,
+      user?.id,
     );
   }
 
@@ -77,11 +112,16 @@ export class WalletController {
   @ApiOperation({ summary: 'Chuyển tiền giữa các ví' })
   @ApiResponse({ status: 200, type: WalletActionResponse })
   transfer(@CurrentUser() user: any, @Body() transferDto: TransferDto) {
+    const canUseAnyFromWallet =
+      user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN;
+
     return this.walletService.transfer(
-      user?.id,
-      transferDto.toAddress,
+      transferDto.from,
+      transferDto.to,
       transferDto.amount,
       transferDto.currency,
+      user?.id,
+      canUseAnyFromWallet,
     );
   }
 
@@ -99,8 +139,16 @@ export class WalletController {
     return this.walletService.validatePrivateKey(privateKey);
   }
 
+  @Get('admin-wallet')
+  @ApiOperation({ summary: 'Lấy địa chỉ ví Super Admin để nhận thanh toán' })
+  @ApiResponse({ status: 200, type: AdminWalletResponse })
+  async getAdminWallet() {
+    const address = await this.walletService.getAdminWallet();
+    return { address };
+  }
+
   @Get(':id')
-  @ApiOperation({ summary: 'Lấy thông tin chi tiết ví' })
+  @ApiOperation({ summary: 'Lấy thông tin chi tiết ví theo ID' })
   @ApiResponse({ status: 200, type: Wallet })
   findOne(@Param('id') id: string) {
     return this.walletService.findOne(id);

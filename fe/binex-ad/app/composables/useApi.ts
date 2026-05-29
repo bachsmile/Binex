@@ -22,7 +22,24 @@ export const useApi = () => {
     loading.value = true;
     error.value = null;
 
-    const token = useCookie("auth_token").value;
+    // Read auth token from raw cookie (bypass useCookie JSON parse issues)
+    let token: string | null = null;
+    if (import.meta.server) {
+      const headers = useRequestHeaders(['cookie']);
+      const cookieStr = headers.cookie || '';
+      const match = cookieStr.match(/(?:^|;\s*)auth_token=([^;]*)/);
+      token = match ? decodeURIComponent(match[1]) : null;
+    } else {
+      const match = document.cookie.match(/(?:^|;\s*)auth_token=([^;]*)/);
+      token = match ? decodeURIComponent(match[1]) : null;
+    }
+
+    if (token) {
+      // Remove surrounding double quotes if present (common in Nuxt 3 useCookie JSON serialization)
+      if (token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1);
+      }
+    }
     const upperMethod = method.toUpperCase();
 
     const fetchOptions: any = {
@@ -45,12 +62,12 @@ export const useApi = () => {
 
     try {
       const response = await $fetch(url, fetchOptions);
-      
+
       // Transform successful response to comply with ApiResponse (status: boolean)
       if (response && typeof response === "object") {
         const resObj = response as any;
         const hasStatusCode = "statusCode" in resObj;
-        
+
         if (hasStatusCode) {
           const isSuccess = resObj.statusCode >= 200 && resObj.statusCode < 300;
           return {
@@ -60,22 +77,22 @@ export const useApi = () => {
             ...(resObj.total !== undefined ? { total: resObj.total } : {}),
           } as any as T;
         }
-        
+
         if (!("status" in resObj)) {
           resObj.status = true;
         }
       }
-      
+
       return response as T;
     } catch (err: any) {
       error.value = err.data as E;
       console.error(`[API Error ${url}]:`, err.data);
-      
+
       // If the server returned a structured response, return it directly so the caller can check response.status
       if (err.data && typeof err.data === "object" && "status" in err.data) {
         return err.data as T;
       }
-      
+
       // Fallback structured ApiResponse for generic network / server failures
       return {
         status: false,

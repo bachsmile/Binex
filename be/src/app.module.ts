@@ -15,6 +15,7 @@ import { UserModule } from './modules/user/user.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ServiceModule } from './modules/service/service.module';
+import { ServiceGroupModule } from './modules/service-group/service-group.module';
 import { WeddingModule } from './modules/wedding/wedding.module';
 
 import { PayModule } from './modules/pay/pay.module';
@@ -27,6 +28,8 @@ import { PlatformFeeModule } from './modules/platform-fee/platform-fee.module';
 import { NewsModule } from './modules/news/news.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { OrderModule } from './modules/order/order.module';
+import { Order } from './modules/order/entities/order.entity';
 
 @Module({
   imports: [
@@ -53,6 +56,7 @@ import { join } from 'path';
           Wallet,
           Transaction,
           News,
+          Order,
         ],
         autoLoadEntities: true,
         synchronize: true,
@@ -63,6 +67,7 @@ import { join } from 'path';
     WalletModule,
     AuthModule,
     ServiceModule,
+    ServiceGroupModule,
     WeddingModule,
     PayModule,
     FinanceModule,
@@ -72,6 +77,7 @@ import { join } from 'path';
     EventModule,
     PlatformFeeModule,
     NewsModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

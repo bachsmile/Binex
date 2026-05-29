@@ -1,7 +1,7 @@
 /** Auto-generated payload */
 
 
-export interface ExtendPermissionDto {
+export interface ExtendSubscriptionDto {
 
   /**
    * example: 30

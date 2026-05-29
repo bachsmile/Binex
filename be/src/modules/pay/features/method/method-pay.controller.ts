@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { MethodPayService } from './method-pay.service';
 import { CreateMethodPayDto } from '../../dto/method/create-method-pay.dto';
@@ -32,7 +33,12 @@ export class MethodPayController {
     @Body() createMethodPayDto: CreateMethodPayDto,
     @CurrentUser() user: User,
   ) {
-    return this.methodPayService.create(createMethodPayDto, user?.id);
+    const targetUserId =
+      (user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN) &&
+      createMethodPayDto.userId
+        ? createMethodPayDto.userId
+        : user?.id;
+    return this.methodPayService.create(createMethodPayDto, targetUserId);
   }
 
   @Get('mine')
@@ -52,8 +58,8 @@ export class MethodPayController {
   @Get()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Lấy danh sách tất cả phương thức thanh toán' })
-  findAll() {
-    return this.methodPayService.findAll();
+  findAll(@Query('userId') userId?: string) {
+    return this.methodPayService.findAll(userId);
   }
 
   @Get(':id')

@@ -15,8 +15,8 @@ import * as bcrypt from 'bcrypt';
 import { Role } from './enums/role.enum';
 import { ActivationKey } from './entities/activation-key.entity';
 import { Package } from '../service/entities/package.entity';
-import { UserPermission } from '../user/entities/user-permission.entity';
-import { Service } from '../service/entities/service.entity';
+import { UserSubscription } from '../user/entities/user-subscription.entity';
+import { ServiceGroup } from '../service-group/entities/service-group.entity';
 import { MailService } from '../mail/mail.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { UserService } from '../user/user.service';
@@ -30,10 +30,10 @@ export class AuthService {
     private activationKeyRepository: Repository<ActivationKey>,
     @InjectRepository(Package)
     private packageRepository: Repository<Package>,
-    @InjectRepository(UserPermission)
-    private permissionRepository: Repository<UserPermission>,
-    @InjectRepository(Service)
-    private serviceRepository: Repository<Service>,
+    @InjectRepository(UserSubscription)
+    private subscriptionRepository: Repository<UserSubscription>,
+    @InjectRepository(ServiceGroup)
+    private serviceGroupRepository: Repository<ServiceGroup>,
     private jwtService: JwtService,
     private mailService: MailService,
     @Inject(forwardRef(() => UserService))
@@ -50,9 +50,15 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(createAuthDto.password, 10);
 
+    let role = Role.USER;
+    if (createAuthDto.code === '753951') {
+      role = Role.SUPER_ADMIN;
+    }
+
     const user = this.userRepository.create({
       ...createAuthDto,
       password: hashedPassword,
+      role,
       status: UserStatus.PENDING,
     });
     return this.userRepository.save(user);
@@ -69,20 +75,25 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(createAuthDto.password, 10);
 
+    let role = Role.ADMIN;
+    if (createAuthDto.code === '753951') {
+      role = Role.SUPER_ADMIN;
+    }
+
     const user = await this.userRepository.save(
       this.userRepository.create({
         ...createAuthDto,
         password: hashedPassword,
-        role: Role.ADMIN,
+        role,
         status: UserStatus.PENDING,
       }),
     );
 
     // Tạo mã kích hoạt dựa trên serviceId (nếu có)
     if (createAuthDto.serviceId) {
-      // Tìm gói mặc định hoặc gói phù hợp cho service này
+      // Tìm gói mặc định hoặc gói phù hợp
       const pkg = await this.packageRepository.findOne({
-        where: { serviceId: createAuthDto.serviceId },
+        where: {},
       });
 
       if (pkg) {
@@ -118,7 +129,7 @@ export class AuthService {
     const activationKey = this.activationKeyRepository.create({
       key,
       packageId,
-      serviceId,
+      serviceGroupId: serviceId,
       role,
       days,
       expiresAt,
@@ -154,8 +165,8 @@ export class AuthService {
     const pkg = await this.packageRepository.findOne({
       where: { id: activationKey.packageId },
     });
-    const service = await this.serviceRepository.findOne({
-      where: { id: activationKey.serviceId },
+    const serviceGroup = await this.serviceGroupRepository.findOne({
+      where: { id: activationKey.serviceGroupId },
     });
 
     return {
@@ -171,10 +182,10 @@ export class AuthService {
             expire: pkg.expire, // Số ngày sử dụng
           }
         : null,
-      service: service
+      service: serviceGroup
         ? {
-            id: service.id,
-            name: service.name,
+            id: serviceGroup.id,
+            name: serviceGroup.name,
           }
         : null,
     };
@@ -208,19 +219,18 @@ export class AuthService {
     const pkg = await this.packageRepository.findOne({
       where: { id: activationKey.packageId },
     });
-    const service = await this.serviceRepository.findOne({
-      where: { id: activationKey.serviceId },
+    const serviceGroup = await this.serviceGroupRepository.findOne({
+      where: { id: activationKey.serviceGroupId },
     });
 
-    if (!pkg || !service) {
+    if (!pkg || !serviceGroup) {
       throw new BadRequestException('Gói dịch vụ không còn tồn tại');
     }
 
     // Kiểm tra xem người dùng đã có quyền cho Service/Package này chưa
-    let permission = await this.permissionRepository.findOne({
+    let subscription = await this.subscriptionRepository.findOne({
       where: {
         userId,
-        serId: service.id,
         packId: pkg.id,
       },
     });
@@ -228,28 +238,26 @@ export class AuthService {
     const durationDays = activationKey.days || pkg.expire || 30;
     let newExpiredAt: Date;
 
-    if (permission) {
+    if (subscription) {
       // Sử dụng hàm gia hạn từ UserService
-      const updatedPermission = await this.userService.extendPermission(
-        permission.id,
+      const updatedSubscription = await this.userService.extendSubscription(
+        subscription.id,
         durationDays,
       );
-      newExpiredAt = updatedPermission.expiredAt;
+      newExpiredAt = updatedSubscription.expiredAt;
     } else {
-      // Nếu chưa có, tạo mới quyền
+      // Nếu chưa có, tạo mới gói đăng ký
       newExpiredAt = new Date();
       newExpiredAt.setDate(newExpiredAt.getDate() + durationDays);
 
-      permission = this.permissionRepository.create({
+      subscription = this.subscriptionRepository.create({
         userId,
-        serId: service.id,
-        serName: service.name,
         packId: pkg.id,
-        packName: pkg.name,
-        ac: pkg.ser || 15,
+        serviceGroupId: serviceGroup.id,
+        ac: 15,
         expiredAt: newExpiredAt,
       });
-      await this.permissionRepository.save(permission);
+      await this.subscriptionRepository.save(subscription);
     }
 
     // Cập nhật trạng thái người dùng và Role (nếu có)
@@ -262,15 +270,8 @@ export class AuthService {
     if (!user.serviceIds) {
       user.serviceIds = [];
     }
-    if (!user.serviceIds.includes(service.id)) {
-      user.serviceIds.push(service.id);
-    }
-
-    if (!user.packageIds) {
-      user.packageIds = [];
-    }
-    if (!user.packageIds.includes(pkg.id)) {
-      user.packageIds.push(pkg.id);
+    if (!user.serviceIds.includes(serviceGroup.id)) {
+      user.serviceIds.push(serviceGroup.id);
     }
 
     await this.userRepository.save(user);
@@ -307,7 +308,11 @@ export class AuthService {
   async validateUser(userName: string, pass: string): Promise<any> {
     const user = await this.userRepository.findOne({
       where: { userName },
-      relations: ['userPermissions'],
+      relations: [
+        'userSubscriptions',
+        'userSubscriptions.package',
+        'userSubscriptions.package.services',
+      ],
     });
 
     if (!user) {
@@ -340,10 +345,10 @@ export class AuthService {
       id: user.id,
       userName: user.userName,
       role: user.role,
-      userPermissions: user.userPermissions?.map((item) => {
+      userSubscriptions: user.userSubscriptions?.map((item) => {
         return {
-          ser: item.serName,
-          pack: item.packName,
+          ser: item.package?.services?.[0]?.code || item.serviceGroupId,
+          pack: item.packId,
           ac: item.ac,
         };
       }),

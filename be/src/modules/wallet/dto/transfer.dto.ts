@@ -1,11 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class TransferDto {
+  @ApiProperty({ example: '0xB...admin' })
+  @IsString()
+  @IsOptional()
+  from?: string;
+
   @ApiProperty({ example: '0xB...vnd' })
   @IsString()
   @IsNotEmpty()
-  toAddress: string;
+  to: string;
 
   @ApiProperty({ example: 50000 })
   @IsNumber()
@@ -14,6 +19,7 @@ export class TransferDto {
 
   @ApiProperty({ example: 'VND' })
   @IsString()
+  @IsIn(['VND', 'USD'])
   @IsNotEmpty()
   currency: string;
 }

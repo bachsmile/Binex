@@ -14,6 +14,7 @@ export class PackageService {
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
   ) {}
+
   async create(createPackageDto: CreatePackageDto) {
     const existingPackage = await this.packageRepository.findOne({
       where: { name: createPackageDto.name },
@@ -23,65 +24,76 @@ export class PackageService {
       throw new ConflictException('Package name already exists');
     }
 
-    const pack = this.packageRepository.create(createPackageDto);
+    const { serviceIds, serviceId, ...dto } = createPackageDto;
+    void serviceId;
+
+    const pack = this.packageRepository.create(dto);
     pack.createdAt = new Date();
     pack.updatedAt = new Date();
     pack.amountGroup = createPackageDto.isGroup ? 5 : 1;
 
-    const savedPackage = await this.packageRepository.save(pack);
+    const selectedServiceIds = serviceIds;
 
-    // Automatically link to service if serviceId is provided
-    if (createPackageDto.serviceId) {
-      console.log(`[PackageService] Linking package ${savedPackage.id} to service ${createPackageDto.serviceId}`);
-      
-      const service = await this.serviceRepository.findOne({
-        where: { id: createPackageDto.serviceId },
+    if (selectedServiceIds && selectedServiceIds.length > 0) {
+      const services = await this.serviceRepository.find({
+        where: { id: In(selectedServiceIds) },
       });
-
-      if (service) {
-        const packageIds = service.packageIds || [];
-        if (!packageIds.includes(savedPackage.id)) {
-          packageIds.push(savedPackage.id);
-          // Force a new array reference for TypeORM to detect changes
-          service.packageIds = [...packageIds];
-          service.updatedAt = new Date();
-          
-          const updatedService = await this.serviceRepository.save(service);
-          console.log(`[PackageService] Successfully updated service ${service.id}. New packageIds:`, updatedService.packageIds);
-        } else {
-          console.log(`[PackageService] Package ID already exists in service ${service.id}`);
-        }
-      } else {
-        console.warn(`[PackageService] Service with ID ${createPackageDto.serviceId} not found!`);
-      }
+      pack.services = services;
+    } else {
+      pack.services = [];
     }
 
-    return savedPackage;
+    return this.packageRepository.save(pack);
   }
 
   findAll() {
-    return this.packageRepository.find();
+    return this.packageRepository.find({ relations: ['services'] });
   }
 
   findOne(id: string) {
-    return this.packageRepository.findOne({ where: { id } });
+    return this.packageRepository.findOne({
+      where: { id },
+      relations: ['services'],
+    });
   }
 
   findByIds(ids: string[]) {
     if (!Array.isArray(ids) || ids.length === 0) return [];
-    return this.packageRepository.find({ where: { id: In(ids) } });
+    return this.packageRepository.find({
+      where: { id: In(ids) },
+      relations: ['services'],
+    });
   }
 
   async update(id: string, updatePackageDto: UpdatePackageDto) {
     const pack = await this.packageRepository.findOne({
       where: { id },
+      relations: ['services'],
     });
     if (!pack) {
       throw new Error('Package not found');
     }
-    const updatedPack = this.packageRepository.merge(pack, updatePackageDto);
+
+    const { serviceIds, serviceId, ...dto } = updatePackageDto;
+    void serviceId;
+
+    const updatedPack = this.packageRepository.merge(pack, dto);
     updatedPack.amountGroup = updatedPack.isGroup ? 5 : 1;
     updatedPack.updatedAt = new Date();
+
+    const selectedServiceIds = serviceIds;
+
+    if (selectedServiceIds) {
+      if (selectedServiceIds.length > 0) {
+        const services = await this.serviceRepository.find({
+          where: { id: In(selectedServiceIds) },
+        });
+        updatedPack.services = services;
+      } else {
+        updatedPack.services = [];
+      }
+    }
+
     return this.packageRepository.save(updatedPack);
   }
 

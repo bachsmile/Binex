@@ -1,9 +1,17 @@
-import { Column, Entity, PrimaryColumn, BeforeInsert } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryColumn,
+  BeforeInsert,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { ulid } from 'ulid';
+import { Service } from './service.entity';
 
 @Entity('package')
 export class Package {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -15,6 +23,9 @@ export class Package {
 
   @Column()
   name: string;
+
+  @Column({ unique: true, nullable: true })
+  code: string;
 
   @Column()
   description: string;
@@ -46,9 +57,11 @@ export class Package {
   @Column()
   updatedAt: Date;
 
-  @Column({ nullable: true })
-  serviceId: string;
-
-  @Column({ nullable: true })
-  ser: number;
+  @ManyToMany(() => Service)
+  @JoinTable({
+    name: 'package_service',
+    joinColumn: { name: 'package_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'service_id', referencedColumnName: 'id' },
+  })
+  services: Service[];
 }

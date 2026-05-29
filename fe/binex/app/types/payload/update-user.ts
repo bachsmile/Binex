@@ -45,9 +45,7 @@ export interface UpdateUserDto extends Partial<CreateUserDto> {
 
   moduleRoles?: number[];
 
-  walletIds?: string[];
 
-  packageIds?: string[];
 
 }
 

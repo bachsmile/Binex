@@ -85,11 +85,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   moduleRoles: number[];
 
-  @IsString()
-  @IsOptional()
-  walletIds: string[];
 
-  @IsString()
-  @IsOptional()
-  packageIds: string[];
 }

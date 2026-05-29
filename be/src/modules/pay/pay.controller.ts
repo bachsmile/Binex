@@ -1,16 +1,31 @@
-import { Controller, Post, Body, Get, Query, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Query,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { PayService } from './pay.service';
-import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CryptoPayDto } from './dto/pay/crypto-pay.dto';
 import { ManualPayDto } from './dto/pay/manual-pay.dto';
+import { PayPackageDto } from './dto/pay/pay-package.dto';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
 import {
-  PaymentRequest,
+  Payment,
   PaymentRequestStatus,
-} from './entities/payment-request.entity';
+} from './entities/payment.entity';
 import {
   CryptoPayResponse,
   BalanceResponse,
-  AdminWalletResponse,
   VerifyPaymentResponse,
   PaymentRequestListResponse,
 } from './responses/pay.response';
@@ -35,14 +50,6 @@ export class PayController {
     return { address, balance, symbol: 'ETH' };
   }
 
-  @Get('admin-wallet')
-  @ApiOperation({ summary: 'Lấy địa chỉ ví Super Admin để nhận thanh toán' })
-  @ApiResponse({ status: 200, type: AdminWalletResponse })
-  getAdminWallet() {
-    const address = this.payService.getAdminWallet();
-    return { address };
-  }
-
   @Post('verify-payment')
   @ApiOperation({ summary: 'Xác minh giao dịch chuyển tiền từ người dùng' })
   @ApiResponse({ status: 200, type: VerifyPaymentResponse })
@@ -56,14 +63,14 @@ export class PayController {
 
   @Post('manual')
   @ApiOperation({ summary: 'Gửi minh chứng thanh toán chuyển khoản' })
-  @ApiResponse({ status: 201, type: PaymentRequest })
+  @ApiResponse({ status: 201, type: Payment })
   async submitManualPayment(@Body() manualPayDto: ManualPayDto) {
     return this.payService.submitManualPayment(manualPayDto);
   }
 
   @Patch('manual/verify')
   @ApiOperation({ summary: 'Admin phê duyệt/từ chối thanh toán chuyển khoản' })
-  @ApiResponse({ status: 200, type: PaymentRequest })
+  @ApiResponse({ status: 200, type: Payment })
   async verifyManualPayment(
     @Query('requestId') requestId: string,
     @Query('status') status: PaymentRequestStatus,
@@ -77,13 +84,26 @@ export class PayController {
   @ApiResponse({ status: 200, type: PaymentRequestListResponse })
   async getPaymentRequests(
     @Query('status') status?: PaymentRequestStatus,
+    @Query('serviceId') serviceId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
     return this.payService.getPaymentRequests(
       status,
+      serviceId,
       Number(page) || 1,
       Number(limit) || 10,
     );
+  }
+
+  @Post('package')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Thanh toán mua gói bằng Ví' })
+  async payWalletPackage(
+    @CurrentUser() user: any,
+    @Body() payPackageDto: PayPackageDto,
+  ) {
+    return this.payService.payWalletPackage(payPackageDto, user?.id);
   }
 }

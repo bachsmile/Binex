@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryColumn, BeforeInsert } from 'typeorm';
+import { Column, Entity, PrimaryColumn, BeforeInsert, ManyToOne, JoinColumn } from 'typeorm';
 import { ulid } from 'ulid';
+import { User } from '../../user/entities/user.entity';
 
 export enum MethodPayType {
   ACCOUNT_NUMBER = 'account',
@@ -9,7 +10,7 @@ export enum MethodPayType {
 
 @Entity('method-pay')
 export class MethodPay {
-  @PrimaryColumn({ length: 255 })
+  @PrimaryColumn({ type: 'char', length: 26 })
   id: string;
 
   @BeforeInsert()
@@ -52,4 +53,8 @@ export class MethodPay {
 
   @Column({ nullable: true })
   userId: string;
+
+  @ManyToOne(() => User, (user) => user.methodPays)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

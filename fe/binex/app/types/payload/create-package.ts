@@ -5,6 +5,11 @@ export interface CreatePackageDto {
 
   name: string;
 
+  /**
+   * example: PKG_BASIC
+   */
+  code?: string;
+
   description: string;
 
   price: string;
@@ -29,13 +34,13 @@ export interface CreatePackageDto {
    */
   recordLimit?: object;
 
-  ser: number;
-
   serviceId: string;
 
   updatedAt?: Date;
 
   createdAt?: Date;
+
+  serviceIds?: string[];
 
 }
 
