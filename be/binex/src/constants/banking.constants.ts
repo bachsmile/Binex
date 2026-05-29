@@ -1,0 +1,33 @@
+export const BANK_AND_WALLET_OPTIONS = [
+  // Banks
+  { name: 'Vietcombank (Ngoại thương Việt Nam)', code: 'VCB', type: 'bank' },
+  { name: 'Techcombank (Kỹ thương Việt Nam)', code: 'TCB', type: 'bank' },
+  { name: 'BIDV (Đầu tư và Phát triển Việt Nam)', code: 'BIDV', type: 'bank' },
+  { name: 'VietinBank (Công thương Việt Nam)', code: 'CTG', type: 'bank' },
+  { name: 'MB Bank (Quân đội)', code: 'MBB', type: 'bank' },
+  {
+    name: 'Agribank (Nông nghiệp và Phát triển Nông thôn)',
+    code: 'VBA',
+    type: 'bank',
+  },
+  { name: 'ACB (Á Châu)', code: 'ACB', type: 'bank' },
+  { name: 'VPBank (Việt Nam Thịnh Vượng)', code: 'VPB', type: 'bank' },
+  { name: 'Sacombank (Sài Gòn Thương Tín)', code: 'STB', type: 'bank' },
+  { name: 'TPBank (Tiên Phong)', code: 'TPB', type: 'bank' },
+  { name: 'HDBank (Phát triển TP.HCM)', code: 'HDB', type: 'bank' },
+  { name: 'VIB (Quốc tế Việt Nam)', code: 'VIB', type: 'bank' },
+  { name: 'SHB (Sài Gòn - Hà Nội)', code: 'SHB', type: 'bank' },
+  { name: 'MSB (Hàng Hải Việt Nam)', code: 'MSB', type: 'bank' },
+  { name: 'OCB (Phương Đông)', code: 'OCB', type: 'bank' },
+  { name: 'LPBank (Bưu điện Liên Việt)', code: 'LPB', type: 'bank' },
+  { name: 'Eximbank (Xuất Nhập Khẩu Việt Nam)', code: 'EIB', type: 'bank' },
+  { name: 'SeABank (Đông Nam Á)', code: 'SSB', type: 'bank' },
+  { name: 'BAC A BANK (Bắc Á)', code: 'BAB', type: 'bank' },
+  { name: 'ABBANK (An Bình)', code: 'ABB', type: 'bank' },
+  // E-wallets
+  { name: 'Ví MoMo', code: 'MOMO', type: 'wallet' },
+  { name: 'Ví ZaloPay', code: 'ZALOPAY', type: 'wallet' },
+  { name: 'Ví ShopeePay', code: 'SHOPEEPAY', type: 'wallet' },
+  { name: 'Viettel Money', code: 'VIETTELMONEY', type: 'wallet' },
+  { name: 'Ví VNPay', code: 'VNPAY', type: 'wallet' },
+];
